@@ -2,6 +2,8 @@
 
 ## Setting up the code
 
+HELLO TW-SCATTERING CREW!
+
 Prerequisite: if you haven't, add this line to your `~/.profile`:
 ```
 source /cvmfs/cms.cern.ch/cmsset_default.sh

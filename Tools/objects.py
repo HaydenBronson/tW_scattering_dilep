@@ -18,7 +18,7 @@ except ImportError:
     from yaml import Loader, Dumper
 
 
-with open('../data/objects.yaml') as f:
+with open('data/objects.yaml') as f:
     obj_def = load(f, Loader=Loader)
 
 class Collections:

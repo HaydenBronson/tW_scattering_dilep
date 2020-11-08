@@ -95,6 +95,8 @@ class exampleProcessor(processor.ProcessorABC):
             'fw_pt':              hist.Hist("Counts", dataset_axis, pt_axis),
             'fw_eta':             hist.Hist("Counts", dataset_axis, eta_axis),
             'fw_pt_total':      hist.Hist("Counts", dataset_axis, pt_axis),  
+            'fw_max_deltaeta':  hist.Hist('Counts', dataset_axis, eta_axis),
+            'lj_max_deltaeta':  hist.Hist('Counts', dataset_axis, eta_axis),
 
          })
 
@@ -285,6 +287,16 @@ class exampleProcessor(processor.ProcessorABC):
         output['fw_eta'].fill(dataset=dataset, eta=fw[event_selection].eta.flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 #        output['fw_pt_total'].fill(dataset=dataset, pt=fw_pt_total_data[event_selection].any().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 
+#plot delta eta
+        # We want to get the deltaEta between the most forward jet fw and the jet giving the largest invariant mass with fw, fw2
+        jj = fw.cross(light)
+        deltaEta_jj = abs(fw.eta - jj[jj.mass.argmax()].i1.eta)
+        #deltaEtaJJMin = ((deltaEta>2).any())
+        lj = light.choose(2)
+        maxlj = lj.mass.argmax()
+        deltaEta_lj = abs(lj[maxlj].i0.eta-lj[maxlj].i1.eta)
+
+
         return output
 
     def postprocess(self, accumulator):
@@ -305,7 +317,7 @@ def main():
     # histograms
     histograms = []
     histograms += ['N_ele', 'N_mu', 'N_diele', 'N_dimu', 'MET_pt', 'pt_spec_max', 'MT', 'HT', 'ST', 'mbj_max', 'mjj_max', 'mlb_max', 'mlb_min', 'mlj_max', 'mlj_min', 'N_b', 'N_jet', 'N_spec']
-    histograms += ['lepton_flavor', 'trailing_lep_pt', 'leading_muon_pt', 'leading_electron_pt', 'leading_spectator_pt', 'fw_pt', 'fw_eta', 'fw_pt_total']
+    histograms += ['lepton_flavor', 'trailing_lep_pt', 'leading_muon_pt', 'leading_electron_pt', 'leading_spectator_pt', 'fw_pt', 'fw_eta', 'fw_pt_total', 'fw_max_deltaeta', 'lj_max_deltaeta']
     # initialize cache
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['singleLep']), serialized=True)
     if not overwrite:
@@ -316,7 +328,7 @@ def main():
 
     else:
         # Run the processor
-        output = processor.run_uproot_job(fileset,
+        output = processor.run_uproot_job(fileset_small,
                                       treename='Events',
                                       processor_instance=exampleProcessor(),
                                       executor=processor.futures_executor,

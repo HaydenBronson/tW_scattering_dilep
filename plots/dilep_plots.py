@@ -259,6 +259,17 @@ for name in histograms:
 #        axis = 'pt'
 #        new_met_bins = hist.Bin('pt', r'$M_T \ (GeV)$', 20, 0, 200)
 #        histogram = histogram.rebin('pt', new_met_bins)
+#    elif name == 'fw_max_deltaeta':
+#        # rebin
+#        axis = 'eta'
+#        new_eta_bins = hist.Bin("eta", r"$fw jet delta\eta$", 30, 0,11)
+#        histogram = histogram.rebin('eta', new_eta_bins)
+#    elif name == 'lj_max_deltaeta':
+#        # rebin
+#        axis = 'eta'
+#        new_eta_bins = hist.Bin("eta", r"$light jet delta\eta$", 30, 0,11)
+#        histogram = histogram.rebin('eta', new_eta_bins)
+
 
     else:
         skip = True

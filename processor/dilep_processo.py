@@ -170,6 +170,7 @@ class exampleProcessor(processor.ProcessorABC):
         leading_electron = electron[electron.pt.argmax()]
 
         trailing_lep = lepton[lepton.pt.argmin()] 
+        leading_lep = lepton[lepton.pt.argmax()]
                       
         ## MET
         met_pt  = df["MET_pt"]
@@ -178,6 +179,7 @@ class exampleProcessor(processor.ProcessorABC):
         ## other variables
         st = df["MET_pt"] + jet.pt.sum() + muon.pt.sum() + electron.pt.sum()
         ht = jet.pt.sum()
+        fw_pt_total_data = ((leading_spectator.pt.sum()) + df["MET"].sum())
         
         ## Event classifieres
         # We want to get the deltaEta between the most forward jet fw and the jet giving the largest invariant mass with fw, fw2
@@ -244,8 +246,8 @@ class exampleProcessor(processor.ProcessorABC):
         output['N_dimu'].fill(dataset=dataset, multiplicity=dimuon[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
         
         #plots of spectator quark
-        output['N_spec'].fill(dataset=dataset, multiplicity=spectator[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
-        output['pt_spec_max'].fill(dataset=dataset, pt=spectator[event_selection].pt.max().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['N_spec'].fill(dataset=dataset, multiplicity=leading_spectator[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
+        output['pt_spec_max'].fill(dataset=dataset, pt=leading_spectator[event_selection].pt.max().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
         
         # MET_pt, MT, N_b, N_jets, HT, ST
         
@@ -288,8 +290,9 @@ class exampleProcessor(processor.ProcessorABC):
         output['fw_pt'].fill(dataset=dataset, pt=fw[event_selection].pt.flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
         output['fw_eta'].fill(dataset=dataset, eta=fw[event_selection].eta.flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 
-#        R= ((Lepton.eta.argmax()-Jet.eta.argmax())**2 + (Lepton.phi.argmax()-Jet.phi.argmax()**2))**0.5  #USE ARGMAX INSTEAD
-#        output['R'].fill(dataset=dataset, multiplicity = R[dilep].flatten(), weight=df['weight'][dilep]*cfg['lumi'])
+#        R= ((leading_lep.eta.sum()-leading_spectator.eta.sum())**2 + (leading_lep.phi.sum()-leading_spectator.phi.sum()**2))**0.5  #Change leading_spectator to jet
+#        output['R'].fill(dataset=dataset, multiplicity = R[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+
 
 #        output['fw_pt_total'].fill(dataset=dataset, pt=fw_pt_total_data[event_selection].any().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 

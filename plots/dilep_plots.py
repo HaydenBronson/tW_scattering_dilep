@@ -125,7 +125,7 @@ cache.load()
 
 histograms = cache.get('histograms')
 output = cache.get('simple_output')
-plotDir = os.path.expandvars(cfg['meta']['plots']) + '/dilep_newselection_plot/'
+plotDir = os.path.expandvars(cfg['meta']['plots']) + '/dilep_plots/'
 finalizePlotDir(plotDir)
 
 if not histograms:

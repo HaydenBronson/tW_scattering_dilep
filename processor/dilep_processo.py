@@ -97,6 +97,8 @@ class exampleProcessor(processor.ProcessorABC):
             'fw_pt_total':      hist.Hist("Counts", dataset_axis, pt_axis),  
             'fw_max_deltaeta':  hist.Hist('Counts', dataset_axis, eta_axis),
             'lj_max_deltaeta':  hist.Hist('Counts', dataset_axis, eta_axis),
+            'R':          hist.Hist("Counts", dataset_axis, multiplicity_axis),
+
 
          })
 
@@ -285,6 +287,10 @@ class exampleProcessor(processor.ProcessorABC):
         
         output['fw_pt'].fill(dataset=dataset, pt=fw[event_selection].pt.flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
         output['fw_eta'].fill(dataset=dataset, eta=fw[event_selection].eta.flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+
+        R= ((Lepton.eta.argmax()-Jet.eta.argmax())**2 + (Lepton.phi.argmax()-Jet.phi.argmax()**2))**0.5  #USE ARGMAX INSTEAD
+        output['R'].fill(dataset=dataset, multiplicity = R[dilep].flatten(), weight=df['weight'][dilep]*cfg['lumi'])
+
 #        output['fw_pt_total'].fill(dataset=dataset, pt=fw_pt_total_data[event_selection].any().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 
 #plot delta eta

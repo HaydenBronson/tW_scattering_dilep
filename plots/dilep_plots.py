@@ -273,6 +273,16 @@ for name in histograms:
         axis = 'multiplicity'
         new_n_bins = hist.Bin("multiplicity",         r"eta", 20, -0.5, 19.5)
         histogram = histogram.rebin('multiplicity', new_n_bins)
+    elif name == 'fw_pt_total':
+        # rebin
+        axis = 'eta'
+        new_eta_bins = hist.Bin('eta', r'$\eta$', 30, -5.5, 5.5)
+        histogram = histogram.rebin('eta', new_eta_bins)
+    elif name == 'fw_max_deltaeta':
+        # rebin
+        axis = 'eta'
+        new_eta_bins = hist.Bin('eta', r'$\eta$', 30, -5.5, 5.5)
+        histogram = histogram.rebin('eta', new_eta_bins)
 
     else:
         skip = True

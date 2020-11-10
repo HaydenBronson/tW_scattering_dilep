@@ -96,6 +96,7 @@ class exampleProcessor(processor.ProcessorABC):
             'fw_eta':             hist.Hist("Counts", dataset_axis, eta_axis),
             'fw_pt_total':      hist.Hist("Counts", dataset_axis, pt_axis),  
             'fw_max_deltaeta':  hist.Hist('Counts', dataset_axis, eta_axis),
+            #'heavy_jet_deltaeta':  hist.Hist('Counts', dataset_axis, eta_axis),
             'lj_max_deltaeta':  hist.Hist('Counts', dataset_axis, eta_axis),
 #            'R':          hist.Hist("Counts", dataset_axis, multiplicity_axis),
 
@@ -170,6 +171,7 @@ class exampleProcessor(processor.ProcessorABC):
         leading_electron = electron[electron.pt.argmax()]
 
         trailing_lep = lepton[lepton.pt.argmin()] 
+        leading_lep = lepton[lepton.pt.argmax()]
                       
         ## MET
         met_pt  = df["MET_pt"]
@@ -195,6 +197,14 @@ class exampleProcessor(processor.ProcessorABC):
         pos_SS_dimuon = ( dimuon[(dimuon.i0.charge>0 * dimuon.i1.charge)>0].counts>0 )
         pos_SS_diele = ( dielectron[(dielectron.i0.charge>0 * dielectron.i1.charge)>0].counts>0 )
         pos_SS_dilep = ( dilepton[(dilepton.i0.charge>0 * dilepton.i1.charge)>0].counts>0 )
+
+        ##More Variables and Masses
+        fw_pt_total_data = ((leading_spectator.pt.sum()) + df["MET_pt"].sum())
+        heavy_jet = jet[jet.mass.argmax()]
+        #heavy_jets = jet[jet.choose(2).mass.argmax()]
+        deta_spec_heavy = leading_spectator.eta.sum() - heavy_jet.eta.sum()
+        #deta_heavy_jets= heavy_jets.eta.argmax() - heavy_jets.eta.argmin()  ###this probs doesn't work at all
+
 
         ## updated
         dilep      = ((electron.counts + muon.counts)==2)
@@ -244,8 +254,8 @@ class exampleProcessor(processor.ProcessorABC):
         output['N_dimu'].fill(dataset=dataset, multiplicity=dimuon[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
         
         #plots of spectator quark
-        output['N_spec'].fill(dataset=dataset, multiplicity=spectator[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
-        output['pt_spec_max'].fill(dataset=dataset, pt=spectator[event_selection].pt.max().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['N_spec'].fill(dataset=dataset, multiplicity=leading_spectator[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
+        output['pt_spec_max'].fill(dataset=dataset, pt=leading_spectator[event_selection].pt.max().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
         
         # MET_pt, MT, N_b, N_jets, HT, ST
         
@@ -288,10 +298,14 @@ class exampleProcessor(processor.ProcessorABC):
         output['fw_pt'].fill(dataset=dataset, pt=fw[event_selection].pt.flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
         output['fw_eta'].fill(dataset=dataset, eta=fw[event_selection].eta.flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 
-#        R= ((Lepton.eta.argmax()-Jet.eta.argmax())**2 + (Lepton.phi.argmax()-Jet.phi.argmax()**2))**0.5  #USE ARGMAX INSTEAD
-#        output['R'].fill(dataset=dataset, multiplicity = R[dilep].flatten(), weight=df['weight'][dilep]*cfg['lumi'])
+#        R= ((leading_lep.eta.sum()-leading_spectator.eta.sum())**2 + (leading_lep.phi.sum()-leading_spectator.phi.sum()**2))**0.5  #Change leading_spectator to jet ##ADD ABS()
+#        output['R'].fill(dataset=dataset, multiplicity = R[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+
 
 #        output['fw_pt_total'].fill(dataset=dataset, pt=fw_pt_total_data[event_selection].any().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+#        output['fw_max_deltaeta'].fill(dataset=dataset, eta = deta_spec_heavy[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+#        output['heavy_jet_deltaeta'].fill(dataset=dataset, eta = deta_heavy_jets[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+
 
 #plot delta eta
         # We want to get the deltaEta between the most forward jet fw and the jet giving the largest invariant mass with fw, fw2
@@ -324,6 +338,7 @@ def main():
     histograms = []
     histograms += ['N_ele', 'N_mu', 'N_diele', 'N_dimu', 'MET_pt', 'pt_spec_max', 'MT', 'HT', 'ST', 'mbj_max', 'mjj_max', 'mlb_max', 'mlb_min', 'mlj_max', 'mlj_min', 'N_b', 'N_jet', 'N_spec']
     histograms += ['lepton_flavor', 'trailing_lep_pt', 'leading_muon_pt', 'leading_electron_pt', 'leading_spectator_pt', 'fw_pt', 'fw_eta', 'fw_pt_total', 'fw_max_deltaeta', 'lj_max_deltaeta']
+#    histograms += ['R', 'heavy_jet_deltaeta']
     # initialize cache
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['singleLep']), serialized=True)
     if not overwrite:

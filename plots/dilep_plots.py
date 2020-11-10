@@ -276,8 +276,8 @@ for name in histograms:
     elif name == 'fw_pt_total':
         # rebin
         axis = 'pt'
-        new_pt_bins = hist.Bin('pt', r'pt', 30, -5.5, 5.5)
-        histogram = histogram.rebin('pt', new_pt_bins)
+       # new_pt_bins = hist.Bin('pt', r'pt', 30, -5.5, 5.5)
+        histogram = histogram.rebin('pt',hist.Bin('pt', r'pt', 30, -5.5, 5.5))
     elif name == 'fw_max_deltaeta':
         # rebin
         axis = 'eta'

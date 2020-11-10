@@ -334,7 +334,7 @@ def main():
 
     else:
         # Run the processor
-        output = processor.run_uproot_job(fileset_small,
+        output = processor.run_uproot_job(fileset,
                                       treename='Events',
                                       processor_instance=exampleProcessor(),
                                       executor=processor.futures_executor,

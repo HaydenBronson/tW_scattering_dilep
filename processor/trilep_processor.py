@@ -79,7 +79,19 @@ class exampleProcessor(processor.ProcessorABC):
             'tW_scattering':    processor.defaultdict_accumulator(int),
             'DY':               processor.defaultdict_accumulator(int),
             'totalEvents':      processor.defaultdict_accumulator(int),
-        })
+
+            'MET_lep_pt':   hist.Hist("Counts", dataset_axis, pt_axis), 
+            'trailing_lep_pt':  hist.Hist("Counts", dataset_axis, pt_axis),
+            'leading_lep_pt':  hist.Hist("Counts", dataset_axis, pt_axis),  
+            'fw_pt':              hist.Hist("Counts", dataset_axis, pt_axis),
+            'fw_eta':             hist.Hist("Counts", dataset_axis, eta_axis),
+            'fw_pt_total':      hist.Hist("Counts", dataset_axis, pt_axis),  
+            'fw_max_deltaeta':  hist.Hist('Counts', dataset_axis, eta_axis),
+            'R':          hist.Hist("Counts", dataset_axis, multiplicity_axis),
+
+
+         })
+    
 
 
     @property
@@ -126,6 +138,7 @@ class exampleProcessor(processor.ProcessorABC):
             pdgId = df['Lepton_pdgId'].content,
         )
 
+        fw        = light[abs(light.eta).argmax()] # the most forward light jet
         ## Muons
         muon = lepton[abs(lepton['pdgId'])==13]
         dimuon = muon.choose(2)
@@ -212,6 +225,19 @@ class exampleProcessor(processor.ProcessorABC):
         output['mlj_max'].fill(dataset=dataset, mass=lepton_jet_pair[event_selection].mass.max().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
         output['mlj_min'].fill(dataset=dataset, mass=lepton_jet_pair[event_selection].mass.min().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 
+        met_and_lep_pt = lepton.pt.sum() + met_pt
+        output['MET_lep_pt'].fill(dataset=dataset, pt=met_and_lep_pt[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+
+        trailing_lep = lepton[lepton.pt.argmin()] 
+        leading_lep = lepton[lepton.pt.argmax()]
+        output['trailing_lep_pt'].fill(dataset=dataset, pt=trailing_lep[event_selection].pt.min().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['leading_lep_pt'].fill(dataset=dataset, pt=leading_lep[event_selection].pt.max().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+
+        output['fw_pt'].fill(dataset=dataset, pt=fw[event_selection].pt.sum().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['fw_eta'].fill(dataset=dataset, eta=fw[event_selection].eta.sum().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+
+        R = (abs((leading_lep.eta.sum()-leading_spectator.eta.sum())**2 + (leading_lep.phi.sum()-leading_spectator.phi.sum()**2)))**0.5  #Change leading_spectator to jet ##ADD ABS()
+        output['R'].fill(dataset=dataset, multiplicity = R[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 
         return output
 
@@ -234,7 +260,7 @@ def main():
     histograms = []
     histograms += ['N_ele', 'N_mu', 'N_diele', 'N_dimu', 'N_jet', 'N_b', 'N_spec', 'pt_spec_max', 'eta_spec_max']
     histograms += ['MET_pt', 'MT', 'HT', 'ST', 'mbj_max', 'mjj_max', 'mlb_max', 'mlb_min', 'mlj_max', 'mlj_min']
-
+    histograms += ['MET_lep_pt', 'trailing_lep_pt', 'leading_lep_pt', 'fw_pt', 'fw_eta']
     # initialize cache
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['singleLep']), serialized=True)
     if not overwrite:

@@ -121,6 +121,16 @@ if not histograms:
     print ("Couldn't find histograms in archive. Quitting.")
     exit()
 
+'''
+SECOND ENTRY IS WHAT SHOWS UP ON GRAPH, IT USES LATEX FORMATING
+
+    pt	 		hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+    multiplicity 	hist.Bin('multiplicity', r'$N_{jet}$', 15, -0.5, 14.5)
+    mass	 	hist.Bin('mass', r'$M(b, light) \ (GeV)$', 25, 0, 1500)
+    eta 	 	hist.Bin('eta', r'$\eta$', 30, -5.5, 5.5)
+    phi			hist.Bin('phi', r'$phi(single b)$', 30, -5.5, 5.5)
+'''
+
 print ("Plots will appear here:", plotDir )
 
 for name in histograms:
@@ -157,11 +167,54 @@ for name in histograms:
         new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
         histogram = histogram.rebin('multiplicity', new_n_bins)
     elif name == 'pt_spec_max':
-        # rebin
         axis = 'pt'
-        new_met_bins = hist.Bin('pt', r'$M_T \ (GeV)$', 20, 0, 200)
-        histogram = histogram.rebin('pt', new_met_bins)
+        new_pt_bins = hist.Bin('pt', r'$M_T \ (GeV)$', 20, 0, 200)
+        histogram = histogram.rebin('pt', new_pt_bins)
+    elif name == 'eta_spec_max':
+        axis = 'eta'
+        new_eta_bins = hist.Bin('eta', r'$\eta$', 30, -5.5, 5.5)
+        histogram = histogram.rebin('eta', new_eta_bins)
+    elif name == 'HT':
+        axis = 'pt'
+        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+        histogram = histogram.rebin('pt', new_pt_bins)
+    elif name == 'MT':
+        axis = 'pt'
+        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+        histogram = histogram.rebin('pt', new_pt_bins)
+    elif name == 'MET_pt':
+        axis = 'pt'
+        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+        histogram = histogram.rebin('pt', new_pt_bins)
+    elif name == 'ST':
+        axis = 'pt'
+        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+        histogram = histogram.rebin('pt', new_pt_bins)
 
+    elif name == 'mbj_max':
+        axis = 'mass'
+        new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 25, 0, 1500)
+        histogram = histogram.rebin('mass', new_mass_bins)
+    elif name == 'mjj_max':
+        axis = 'mass'
+        new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 25, 0, 1500)
+        histogram = histogram.rebin('mass', new_mass_bins)
+    elif name == 'mlb_max': 
+        axis = 'mass' 
+        new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 25, 0, 1500)
+        histogram = histogram.rebin('mass', new_mass_bins)
+    elif name == 'mlj_max':
+        axis = 'mass'
+        new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 25, 0, 1500)
+        histogram = histogram.rebin('mass', new_mass_bins)
+    elif name == 'mlb_min':
+        axis = 'mass'
+        new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 25, 0, 1500)
+        histogram = histogram.rebin('mass', new_mass_bins)
+    elif name == 'mlj_min':
+        axis = 'mass'
+        new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 25, 0, 1500)
+        histogram = histogram.rebin('mass', new_mass_bins)
 
 
     else:

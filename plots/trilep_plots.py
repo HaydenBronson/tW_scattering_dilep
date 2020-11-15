@@ -144,6 +144,23 @@ for name in histograms:
         axis = 'multiplicity'
         new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
         histogram = histogram.rebin('multiplicity', new_n_bins)
+    elif name == 'N_b':
+        axis = 'multiplicity'
+        new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
+        histogram = histogram.rebin('multiplicity', new_n_bins)
+    elif name == 'N_jet':
+        axis = 'multiplicity'
+        new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
+        histogram = histogram.rebin('multiplicity', new_n_bins)
+    elif name == 'N_spec':
+        axis = 'multiplicity'
+        new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
+        histogram = histogram.rebin('multiplicity', new_n_bins)
+    elif name == 'pt_spec_max':
+        # rebin
+        axis = 'pt'
+        new_met_bins = hist.Bin('pt', r'$M_T \ (GeV)$', 20, 0, 200)
+        histogram = histogram.rebin('pt', new_met_bins)
 
 
 

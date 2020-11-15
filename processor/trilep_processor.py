@@ -212,7 +212,7 @@ def main():
 
     # histograms
     histograms = []
-    histograms += ['N_ele', 'N_mu', 'N_diele', 'N_dimu']
+    histograms += ['N_ele', 'N_mu', 'N_diele', 'N_dimu', 'N_jet', 'N_b', 'N_spec', 'pt_spec_max', 'eta_spec_max']
 
 
     # initialize cache

@@ -209,7 +209,8 @@ class exampleProcessor(processor.ProcessorABC):
         output['MET_pt'].fill(dataset=dataset, pt=df["MET_pt"][event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
         output['MT'].fill(dataset=dataset, pt=df["MT"][event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 
-        output['HT'].fill(dataset=dataset, ht=df['Jet_pt'][event_selection].sum().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        ht = jet[jet['goodjet']==1].pt.sum()
+        output['HT'].fill(dataset=dataset, ht=ht[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
         st = jet[jet['goodjet']==1].pt.sum() + lepton.pt.sum() + df['MET_pt']
         output['ST'].fill(dataset=dataset, ht=st[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 

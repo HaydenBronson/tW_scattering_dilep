@@ -174,10 +174,10 @@ for name in histograms:
         axis = 'eta'
         new_eta_bins = hist.Bin('eta', r'$\eta$', 30, -5.5, 5.5)
         histogram = histogram.rebin('eta', new_eta_bins)
-    elif name == 'HT':
-        axis = 'pt'
-        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
-        histogram = histogram.rebin('pt', new_pt_bins)
+#    elif name == 'HT':
+#        axis = 'pt'
+#        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+#        histogram = histogram.rebin('pt', new_pt_bins)
     elif name == 'MT':
         axis = 'pt'
         new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
@@ -186,11 +186,10 @@ for name in histograms:
         axis = 'pt'
         new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
         histogram = histogram.rebin('pt', new_pt_bins)
-    elif name == 'ST':
-        axis = 'pt'
-        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
-        histogram = histogram.rebin('pt', new_pt_bins)
-
+#    elif name == 'ST':
+#        axis = 'pt'
+#        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+#        histogram = histogram.rebin('pt', new_pt_bins)
     elif name == 'mbj_max':
         axis = 'mass'
         new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 25, 0, 1500)

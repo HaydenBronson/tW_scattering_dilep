@@ -11,25 +11,43 @@ import numpy as np
 from Tools.helpers import *
 from klepto.archives import dir_archive
 
-def saveFig( fig, ax, rax, path, name, scale='linear', shape=False, y_max=-1 ):
+
+#def saveFig( fig, ax, rax, path, name, scale='linear', shape=False, y_max=-1 ):
+#    outdir = os.path.join(path,scale)
+#    finalizePlotDir(outdir)
+#    ax.set_yscale(scale)
+#    ax.set_ylabel('Events')
+#
+#    y_min = 0.0005 if shape else 0.05
+#    if y_max>0:
+#        y_max = 0.1 if shape else 300*y_max
+#    else:
+#        y_max = 3e7
+#    if scale == 'log':
+#        ax.set_ylim(y_min, y_max)
+#        #if shape:
+#        #     ax.yaxis.set_ticks(np.array([10e-4,10e-3,10e-2,10e-1,10e0]))
+#        #else:
+#        #    ax.yaxis.set_ticks(np.array([10e-2,10e-1,10e0,10e1,10e2,10e3,10e4,10e5,10e6]))
+#    else:
+#        ax.set_ylim(0.0, y_max)
+
+def saveFig( fig, ax, rax, path, name, scale='linear', shape=False, y_max=-1 ):    #removing rax, ax, rax, path
     outdir = os.path.join(path,scale)
     finalizePlotDir(outdir)
     ax.set_yscale(scale)
     ax.set_ylabel('Events')
 
-    y_min = 0.0005 if shape else 0.05
-    if y_max>0:
-        y_max = 0.1 if shape else 300*y_max
+    if scale == 'linear':
+        if y_max<0 or True:
+            pass
+        else:
+            ax.set_ylim(0, 1 if shape else 1.2*y_max)
     else:
-        y_max = 3e7
-    if scale == 'log':
-        ax.set_ylim(y_min, y_max)
-        #if shape:
-        #     ax.yaxis.set_ticks(np.array([10e-4,10e-3,10e-2,10e-1,10e0]))
-        #else:
-        #    ax.yaxis.set_ticks(np.array([10e-2,10e-1,10e0,10e1,10e2,10e3,10e4,10e5,10e6]))
-    else:
-        ax.set_ylim(0.0, y_max)
+        if y_max<0 and not shape:
+            pass
+        else:
+            ax.set_ylim(0.000005 if shape else 0.05, 3 if shape else 300*y_max)
 
 
     handles, labels = ax.get_legend_handles_labels()
@@ -298,10 +316,27 @@ for name in histograms:
 
        # fig, ax = plt.subplots(1,1,figsize=(7,7))
        
+#        hist.plot1d(histogram[notdata],overlay="dataset", density=True, stack=False, overflow='over', ax=ax) # make density plots because we don't care about x-sec differences
+#        for l in ['linear', 'log']:
+#            saveFig(fig, ax, None, plotDir, name+'_shape', scale=l, shape=True)
+#        fig.clear()
+#        ax.clear()
+#        plt.close()
+    try:
+        fig, ax = plt.subplots(1,1,figsize=(7,7))
+        notdata = re.compile('(?!pseudodata|wjets|diboson)')
         hist.plot1d(histogram[notdata],overlay="dataset", density=True, stack=False, overflow='over', ax=ax) # make density plots because we don't care about x-sec differences
         for l in ['linear', 'log']:
             saveFig(fig, ax, None, plotDir, name+'_shape', scale=l, shape=True)
         fig.clear()
         ax.clear()
+    except ValueError:
+        print ("Can't make shape plot for a weird reason")
+
+    fig.clear()
+    ax.clear()
+
+    plt.close()
+
 
 df = getCutFlowTable(output, processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY'], lines=['skim','trilep','twoJet','oneBTag', 'met'])

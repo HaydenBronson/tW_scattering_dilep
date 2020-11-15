@@ -129,6 +129,7 @@ SECOND ENTRY IS WHAT SHOWS UP ON GRAPH, IT USES LATEX FORMATING
     mass	 	hist.Bin('mass', r'$M(b, light) \ (GeV)$', 25, 0, 1500)
     eta 	 	hist.Bin('eta', r'$\eta$', 30, -5.5, 5.5)
     phi			hist.Bin('phi', r'$phi(single b)$', 30, -5.5, 5.5)
+    ht                  hist.Bin("ht",        r"$H_{T}$ (GeV)", 500, 0, 5000)
 '''
 
 print ("Plots will appear here:", plotDir )
@@ -174,10 +175,10 @@ for name in histograms:
         axis = 'eta'
         new_eta_bins = hist.Bin('eta', r'$\eta$', 30, -5.5, 5.5)
         histogram = histogram.rebin('eta', new_eta_bins)
-#    elif name == 'HT':
-#        axis = 'pt'
-#        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
-#        histogram = histogram.rebin('pt', new_pt_bins)
+    elif name == 'HT':
+        axis = 'ht'
+        new_ht_bins =  hist.Bin("ht",        r"$H_{T}$ (GeV)", 500, 0, 5000)
+        histogram = histogram.rebin('ht', new_ht_bins)
     elif name == 'MT':
         axis = 'pt'
         new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
@@ -186,10 +187,10 @@ for name in histograms:
         axis = 'pt'
         new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
         histogram = histogram.rebin('pt', new_pt_bins)
-#    elif name == 'ST':
-#        axis = 'pt'
-#        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
-#        histogram = histogram.rebin('pt', new_pt_bins)
+    elif name == 'ST':
+        axis = 'ht'
+        new_ht_bins =  hist.Bin('ht', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+        histogram = histogram.rebin('ht', new_ht_bins)
     elif name == 'mbj_max':
         axis = 'mass'
         new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 25, 0, 1500)
@@ -214,7 +215,30 @@ for name in histograms:
         axis = 'mass'
         new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 25, 0, 1500)
         histogram = histogram.rebin('mass', new_mass_bins)
-
+    elif name == 'MET_lep_pt':
+        axis = 'pt'
+        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+        histogram = histogram.rebin('pt', new_pt_bins)
+    elif name == 'trailing_lep_pt':
+        axis = 'pt'
+        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+        histogram = histogram.rebin('pt', new_pt_bins)
+    elif name == 'leading_lep_pt':
+        axis = 'pt'
+        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+        histogram = histogram.rebin('pt', new_pt_bins)
+    elif name == 'fw_pt':
+        axis = 'pt'
+        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+        histogram = histogram.rebin('pt', new_pt_bins)
+    elif name == 'fw_eta':
+        axis = 'eta'
+        new_eta_bins = hist.Bin('eta', r'$\eta$', 30, -5.5, 5.5)
+        histogram = histogram.rebin('eta', new_eta_bins)
+    elif name == 'R':
+        axis = 'multiplicity'
+        new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
+        histogram = histogram.rebin('multiplicity', new_n_bins)
 
     else:
         skip = True

@@ -12,42 +12,32 @@ from Tools.helpers import *
 from klepto.archives import dir_archive
 
 
-#def saveFig( fig, ax, rax, path, name, scale='linear', shape=False, y_max=-1 ):
-#    outdir = os.path.join(path,scale)
-#    finalizePlotDir(outdir)
-#    ax.set_yscale(scale)
-#    ax.set_ylabel('Events')
-#
-#    y_min = 0.0005 if shape else 0.05
-#    if y_max>0:
-#        y_max = 0.1 if shape else 300*y_max
-#    else:
-#        y_max = 3e7
-#    if scale == 'log':
-#        ax.set_ylim(y_min, y_max)
-#        #if shape:
-#        #     ax.yaxis.set_ticks(np.array([10e-4,10e-3,10e-2,10e-1,10e0]))
-#        #else:
-#        #    ax.yaxis.set_ticks(np.array([10e-2,10e-1,10e0,10e1,10e2,10e3,10e4,10e5,10e6]))
-#    else:
-#        ax.set_ylim(0.0, y_max)
-
-def saveFig( fig, ax, rax, path, name, scale='linear', shape=False, y_max=-1 ):    #removing rax, ax, rax, path
+def saveFig( fig, ax, rax, path, name, scale='linear', shape=False, y_max=-1 ):
     outdir = os.path.join(path,scale)
     finalizePlotDir(outdir)
     ax.set_yscale(scale)
     ax.set_ylabel('Events')
 
-    if scale == 'linear':
-        if y_max<0 or True:
-            pass
-        else:
-            ax.set_ylim(0, 1 if shape else 1.2*y_max)
+    y_min = 0.0005 if shape else 0.05
+    if y_max>0:
+        y_max = 0.1 if shape else 300*y_max
     else:
-        if y_max<0 and not shape:
-            pass
-        else:
-            ax.set_ylim(0.000005 if shape else 0.05, 3 if shape else 300*y_max)
+        y_max = 3e7
+    if scale == 'log':
+        ax.set_ylim(y_min, y_max)
+        #if shape:
+        #     ax.yaxis.set_ticks(np.array([10e-4,10e-3,10e-2,10e-1,10e0]))
+        #else:
+        #    ax.yaxis.set_ticks(np.array([10e-2,10e-1,10e0,10e1,10e2,10e3,10e4,10e5,10e6]))
+    else:
+        ax.set_ylim(0.0, y_max)
+
+
+#    else:
+#        if y_max<0 and not shape:
+#            pass
+#        else:
+#            ax.set_ylim(0.000005 if shape else 0.05, 3 if shape else 300*y_max)
 
 
     handles, labels = ax.get_legend_handles_labels()
@@ -159,31 +149,31 @@ for name in histograms:
     if name == 'N_ele':
         # rebin
         axis = 'multiplicity'
-        new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
+        new_n_bins = hist.Bin("multiplicity",         r"N", 6, -0.5, 5.5)
         histogram = histogram.rebin('multiplicity', new_n_bins)
     elif name == 'N_mu':
         axis = 'multiplicity'
-        new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
+        new_n_bins = hist.Bin("multiplicity",         r"N", 6, -0.5, 5.5)
         histogram = histogram.rebin('multiplicity', new_n_bins)
     elif name == 'N_diele':
         axis = 'multiplicity'
-        new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
+        new_n_bins = hist.Bin("multiplicity",         r"N", 6, -0.5, 5.5)
         histogram = histogram.rebin('multiplicity', new_n_bins)
     elif name == 'N_dimu':
         axis = 'multiplicity'
-        new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
+        new_n_bins = hist.Bin("multiplicity",         r"N", 6, -0.5, 5.5)
         histogram = histogram.rebin('multiplicity', new_n_bins)
     elif name == 'N_b':
         axis = 'multiplicity'
-        new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
+        new_n_bins = hist.Bin("multiplicity",         r"N", 6, -0.5, 5.5) 
         histogram = histogram.rebin('multiplicity', new_n_bins)
     elif name == 'N_jet':
         axis = 'multiplicity'
-        new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
+        new_n_bins = hist.Bin("multiplicity",         r"N", 6, -0.5, 5.5)
         histogram = histogram.rebin('multiplicity', new_n_bins)
     elif name == 'N_spec':
         axis = 'multiplicity'
-        new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
+        new_n_bins = hist.Bin("multiplicity",         r"N", 6, -0.5, 5.5)
         histogram = histogram.rebin('multiplicity', new_n_bins)
     elif name == 'pt_spec_max':
         axis = 'pt'
@@ -203,7 +193,7 @@ for name in histograms:
         histogram = histogram.rebin('pt', new_pt_bins)
     elif name == 'MET_pt':
         axis = 'pt'
-        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 500)
         histogram = histogram.rebin('pt', new_pt_bins)
     elif name == 'ST':
         axis = 'ht'
@@ -235,7 +225,7 @@ for name in histograms:
         histogram = histogram.rebin('mass', new_mass_bins)
     elif name == 'MET_lep_pt':
         axis = 'pt'
-        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
+        new_pt_bins =  hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 500)
         histogram = histogram.rebin('pt', new_pt_bins)
     elif name == 'trailing_lep_pt':
         axis = 'pt'
@@ -255,7 +245,7 @@ for name in histograms:
         histogram = histogram.rebin('eta', new_eta_bins)
     elif name == 'R':
         axis = 'multiplicity'
-        new_n_bins = hist.Bin("multiplicity",         r"N", 20, -0.5, 19.5)
+        new_n_bins = hist.Bin("multiplicity",         r"N", 8, -0.5, 7.5)
         histogram = histogram.rebin('multiplicity', new_n_bins)
 
     else:

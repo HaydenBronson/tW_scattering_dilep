@@ -140,16 +140,22 @@ class exampleProcessor(processor.ProcessorABC):
 
         fw        = light[abs(light.eta).argmax()] # the most forward light jet
         ## Muons
-        muon = lepton[abs(lepton['pdgId'])==13]
-        dimuon = muon.choose(2)
-        OSmuon = (dimuon.i0['pdgId'] * dimuon.i1['pdgId'] < 0)
-        dimuon = dimuon[OSmuon]
 
+
+        ## Muons
+        #muon = Collections(df, "Muon", "tight").get()
+        #vetomuon = Collections(df, "Muon", "veto").get()
+        muon = Collections(df, "Muon", "tight").get()
+        vetomuon = Collections(df, "Muon", "veto").get()
+        dimuon = muon.choose(2)
+        SSmuon = ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)>0].counts>0 )
         ## Electrons
-        electron = lepton[abs(lepton['pdgId'])==11]
+        #electron = Collections(df, "Electron", "tight").get()
+        #vetoelectron = Collections(df, "Electron", "veto").get()
+        electron = Collections(df, "Electron", "tight").get()
+        vetoelectron = Collections(df, "Electron", "veto").get()
         dielectron = electron.choose(2)
-        OSelectron = (dielectron.i0['pdgId'] * dielectron.i1['pdgId'] < 0)
-        dielectron = dielectron[OSelectron]
+        SSelectron = ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)>0].counts>0 )
 
         ## MET
         met_pt  = df["MET_pt"]
@@ -255,7 +261,7 @@ def main():
 
     # Inputs are defined in a dictionary
     # dataset : list of files
-    from processor.samples import fileset, fileset_small, fileset_2l
+    from processor.samples import fileset, fileset_small, fileset_2l, fileset_3l
 
     # histograms
     histograms = []
@@ -272,7 +278,7 @@ def main():
 
     else:
         # Run the processor
-        output = processor.run_uproot_job(fileset,
+        output = processor.run_uproot_job(fileset_3l,
                                       treename='Events',
                                       processor_instance=exampleProcessor(),
                                       executor=processor.futures_executor,

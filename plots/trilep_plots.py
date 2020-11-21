@@ -71,7 +71,7 @@ colors = {
     'TTW': '#8AC926',
     'TTX': '#FFCA3A',
     'ttbar': '#1982C4',
-    'wjets': '#6A4C93',
+#    'wjets': '#6A4C93',
 }
 '''
 other colors (sets from coolers.com):
@@ -85,7 +85,7 @@ my_labels = {
     'TTW': r'$t\bar{t}$W+jets',
     'TTX': r'$t\bar{t}$Z/H',
     'ttbar': r'$t\bar{t}$+jets',
-    'wjets': 'W+jets',
+#    'wjets': 'W+jets',
     'pseudodata': 'Pseudo-data',
     'uncertainty': 'Uncertainty',
     'diboson': 'diboson',
@@ -117,7 +117,7 @@ fill_opts = {
 cfg = loadConfig()
 
 # load the results
-cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['singleLep']), serialized=True)
+cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['triLep']), serialized=True)
 cache.load()
 
 histograms = cache.get('histograms')
@@ -279,7 +279,7 @@ for name in histograms:
         fig, (ax) = plt.subplots(1, 1, figsize=(7,7))#, gridspec_kw={"height_ratios": (3, 1)}, sharex=True)
 
         # get axes
-        hist.plot1d(histogram[notdata],overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, error_opts=error_opts, order=['diboson', 'TTX', 'TTW','ttbar','wjets', 'DY']) #error_opts??
+        hist.plot1d(histogram[notdata],overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, error_opts=error_opts, order=['diboson', 'TTX', 'TTW','ttbar', 'DY']) #error_opts??
        # hist.plot1d(histogram['pseudodata'], overlay="dataset", ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
         scales = { 'tW_scattering': 1 }
         histogram.scale(scales, axis='dataset')
@@ -314,7 +314,7 @@ for name in histograms:
 #        plt.close()
     try:
         fig, ax = plt.subplots(1,1,figsize=(7,7))
-        notdata = re.compile('(?!pseudodata|wjets|diboson)')
+        notdata = re.compile('(?!pseudodata|diboson)')
         hist.plot1d(histogram[notdata],overlay="dataset", density=True, stack=False, overflow='over', ax=ax) # make density plots because we don't care about x-sec differences
         for l in ['linear', 'log']:
             saveFig(fig, ax, None, plotDir, name+'_shape', scale=l, shape=True)
@@ -330,3 +330,4 @@ for name in histograms:
 
 
 df = getCutFlowTable(output, processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY'], lines=['skim','trilep','twoJet','oneBTag', 'met'])
+

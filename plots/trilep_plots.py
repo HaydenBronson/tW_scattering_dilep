@@ -289,7 +289,7 @@ for name in histograms:
         fig, (ax) = plt.subplots(1, 1, figsize=(7,7))#, gridspec_kw={"height_ratios": (3, 1)}, sharex=True)
 
         # get axes
-        hist.plot1d(histogram[notdata],overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, error_opts=error_opts, order=['diboson', 'TTX', 'TTW','ttbar', 'DY']) #error_opts??
+        hist.plot1d(histogram[notdata],overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, error_opts=error_opts, order=['diboson', 'TTX', 'TTW','ttbar', 'WZ','DY']) #error_opts??
        # hist.plot1d(histogram['pseudodata'], overlay="dataset", ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
         scales = { 'tW_scattering': 1 }
         histogram.scale(scales, axis='dataset')
@@ -339,5 +339,5 @@ for name in histograms:
     plt.close()
 
 
-df = getCutFlowTable(output, processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY'], lines=['skim','trilep','twoJet','oneBTag', 'met'])
+df = getCutFlowTable(output, processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'WZ', 'TTX', 'DY'], lines=['skim','trilep','twoJet','oneBTag', 'met'])
 

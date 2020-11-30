@@ -145,23 +145,18 @@ class exampleProcessor(processor.ProcessorABC):
 
 
         ## Muons
-        #muon = Collections(df, "Muon", "tight").get()
-        #vetomuon = Collections(df, "Muon", "veto").get()
-        muon = Collections(df, "Muon", "tight").get()
-        vetomuon = Collections(df, "Muon", "veto").get()
+        muon = Collections(df, "Muon", "tight").get() #muon = Collections(df, "Muon", "tightTTH").get()
+        vetomuon = Collections(df, "Muon", "veto").get() #vetomuon = Collections(df, "Muon", "vetoTTH").get()
         dimuon = muon.choose(2)
         SSmuon = ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)>0].counts>0 )
         OSmuon = ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0].counts>0 )
         ## Electrons
-        #electron = Collections(df, "Electron", "tight").get()
-        #vetoelectron = Collections(df, "Electron", "veto").get()
-        electron = Collections(df, "Electron", "tight").get()
-        vetoelectron = Collections(df, "Electron", "veto").get()
+        electron = Collections(df, "Electron", "tight").get() #electron = Collections(df, "Electron", "tightTTH").get()
+        vetoelectron = Collections(df, "Electron", "veto").get() #vetoelectron = Collections(df, "Electron", "vetoTTH").get()
         dielectron = electron.choose(2)
         SSelectron = ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)>0].counts>0 )
         OSelectron = ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)<0].counts>0 )
-#        OSe_cuts = ((dielectron.i0.charge * dielectron.i1.charge)<0) & OSelectron &event_selection
-        OSelectron_m = dielectron.mass
+        OSelectron_m = dielectron.mass.sum()
 
         ## MET
         met_pt  = df["MET_pt"]
@@ -251,7 +246,7 @@ class exampleProcessor(processor.ProcessorABC):
 
         R = (abs((leading_lep.eta.sum()-leading_spectator.eta.sum())**2 + (leading_lep.phi.sum()-leading_spectator.phi.sum()**2)))**0.5  #Change leading_spectator to jet ##ADD ABS()
         output['R'].fill(dataset=dataset, multiplicity = R[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
-        OSe_cuts = ((dielectron.i0.charge * dielectron.i1.charge)<0) & OSelectron &event_selection
+        OSe_cuts = OSelectron
         output['mass_OSelectrons'].fill(dataset=dataset, mass= OSelectron_m[OSe_cuts].flatten(), weight=df['weight'][OSe_cuts]*cfg['lumi'])
 
         return output

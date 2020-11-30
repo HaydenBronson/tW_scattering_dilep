@@ -72,6 +72,10 @@ colors = {
     'TTX': '#FFCA3A',
     'ttbar': '#1982C4',
 #    'wjets': '#6A4C93',
+    'TTZ': '#c65102',
+    'WZ': '#f36196',
+    'diboson': '#a9561e',
+    'DY': '#2ee8bb',
 }
 '''
 other colors (sets from coolers.com):
@@ -86,6 +90,8 @@ my_labels = {
     'TTX': r'$t\bar{t}$Z/H',
     'ttbar': r'$t\bar{t}$+jets',
 #    'wjets': 'W+jets',
+    'TTZ': 'TTZ',
+    'WZ': 'WZ',
     'pseudodata': 'Pseudo-data',
     'uncertainty': 'Uncertainty',
     'diboson': 'diboson',
@@ -117,7 +123,7 @@ fill_opts = {
 cfg = loadConfig()
 
 # load the results
-cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['triLep']), serialized=True)
+cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['singleLep']), serialized=True)
 cache.load()
 
 histograms = cache.get('histograms')
@@ -247,6 +253,10 @@ for name in histograms:
         axis = 'multiplicity'
         new_n_bins = hist.Bin("multiplicity",         r"N", 8, -0.5, 7.5)
         histogram = histogram.rebin('multiplicity', new_n_bins)
+    elif name == 'mass_OSelectrons':
+        axis = 'mass'
+        new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 6, 0, 12)
+        histogram = histogram.rebin('mass', new_mass_bins)
 
     else:
         skip = True

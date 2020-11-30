@@ -76,6 +76,8 @@ class exampleProcessor(processor.ProcessorABC):
             'ttbar':            processor.defaultdict_accumulator(int),
             'TTW':              processor.defaultdict_accumulator(int),
             'TTX':              processor.defaultdict_accumulator(int),
+            'TTZ':              processor.defaultdict_accumulator(int),
+            'WZ':               processor.defaultdict_accumulator(int),
             'tW_scattering':    processor.defaultdict_accumulator(int),
             'DY':               processor.defaultdict_accumulator(int),
             'totalEvents':      processor.defaultdict_accumulator(int),
@@ -88,7 +90,7 @@ class exampleProcessor(processor.ProcessorABC):
             'fw_pt_total':      hist.Hist("Counts", dataset_axis, pt_axis),  
             'fw_max_deltaeta':  hist.Hist('Counts', dataset_axis, eta_axis),
             'R':          hist.Hist("Counts", dataset_axis, multiplicity_axis),
-
+            'mass_OSelectrons':    hist.Hist("Counts", dataset_axis, mass_axis),
 
          })
     
@@ -149,6 +151,7 @@ class exampleProcessor(processor.ProcessorABC):
         vetomuon = Collections(df, "Muon", "veto").get()
         dimuon = muon.choose(2)
         SSmuon = ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)>0].counts>0 )
+        OSmuon = ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0].counts>0 )
         ## Electrons
         #electron = Collections(df, "Electron", "tight").get()
         #vetoelectron = Collections(df, "Electron", "veto").get()
@@ -156,6 +159,9 @@ class exampleProcessor(processor.ProcessorABC):
         vetoelectron = Collections(df, "Electron", "veto").get()
         dielectron = electron.choose(2)
         SSelectron = ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)>0].counts>0 )
+        OSelectron = ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)<0].counts>0 )
+#        OSe_cuts = ((dielectron.i0.charge * dielectron.i1.charge)<0) & OSelectron &event_selection
+        OSelectron_m = dielectron.mass
 
         ## MET
         met_pt  = df["MET_pt"]
@@ -183,7 +189,7 @@ class exampleProcessor(processor.ProcessorABC):
         output['totalEvents']['all'] += len(df['weight'])
 
 
-        processes = ['tW_scattering', 'TTW', 'TTX', 'diboson', 'ttbar', 'DY']
+        processes = ['tW_scattering', 'TTW', 'TTX', 'diboson', 'ttbar', 'DY', 'WZ', 'TTZ']
         cutflow = Cutflow(output, df, cfg, processes)
         
 	#IDK if these are right?????
@@ -245,6 +251,8 @@ class exampleProcessor(processor.ProcessorABC):
 
         R = (abs((leading_lep.eta.sum()-leading_spectator.eta.sum())**2 + (leading_lep.phi.sum()-leading_spectator.phi.sum()**2)))**0.5  #Change leading_spectator to jet ##ADD ABS()
         output['R'].fill(dataset=dataset, multiplicity = R[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        OSe_cuts = ((dielectron.i0.charge * dielectron.i1.charge)<0) & OSelectron &event_selection
+        output['mass_OSelectrons'].fill(dataset=dataset, mass= OSelectron_m[OSe_cuts].flatten(), weight=df['weight'][OSe_cuts]*cfg['lumi'])
 
         return output
 
@@ -267,9 +275,9 @@ def main():
     histograms = []
     histograms += ['N_ele', 'N_mu', 'N_diele', 'N_dimu', 'N_jet', 'N_b', 'N_spec', 'pt_spec_max', 'eta_spec_max']
     histograms += ['MET_pt', 'MT', 'HT', 'ST', 'mbj_max', 'mjj_max', 'mlb_max', 'mlb_min', 'mlj_max', 'mlj_min']
-    histograms += ['MET_lep_pt', 'trailing_lep_pt', 'leading_lep_pt', 'fw_pt', 'fw_eta', 'R']
+    histograms += ['MET_lep_pt', 'trailing_lep_pt', 'leading_lep_pt', 'fw_pt', 'fw_eta', 'R', 'mass_OSelectrons']
     # initialize cache
-    cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['triLep']), serialized=True)
+    cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['singleLep']), serialized=True)
     if not overwrite:
         cache.load()
 
@@ -301,11 +309,11 @@ def main():
 if __name__ == "__main__":
     output = main()
 
-df = getCutFlowTable(output, processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY'], lines=['trilep', 'twoJet', 'oneBTag', 'met'])
+df = getCutFlowTable(output, processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ'], lines=['trilep', 'twoJet', 'oneBTag', 'met'])
 
 #print percentage table
 percentoutput = {}
-for process in ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY']:
+for process in ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ']:
     percentoutput[process] = {'trilep':0, 'twoJet':0, 'oneBTag':0, 'met':0}
     lastnum = output[process]['skim']
     for select in ['trilep', 'twoJet', 'oneBTag', 'met']:

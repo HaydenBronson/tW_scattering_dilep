@@ -255,7 +255,7 @@ for name in histograms:
         histogram = histogram.rebin('multiplicity', new_n_bins)
     elif name == 'mass_OSelectrons':
         axis = 'mass'
-        new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 6, 0, 12)
+        new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 100, 0, 200)
         histogram = histogram.rebin('mass', new_mass_bins)
 
     else:

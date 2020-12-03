@@ -255,7 +255,7 @@ def main():
 
     # Inputs are defined in a dictionary
     # dataset : list of files
-    from processor.samples import fileset, fileset_small, fileset_2l
+    from processor.samples import fileset, fileset_small, fileset_3l
 
     # histograms
     histograms = []
@@ -272,7 +272,7 @@ def main():
 
     else:
         # Run the processor
-        output = processor.run_uproot_job(fileset,
+        output = processor.run_uproot_job(fileset_3l,
                                       treename='Events',
                                       processor_instance=exampleProcessor(),
                                       executor=processor.futures_executor,

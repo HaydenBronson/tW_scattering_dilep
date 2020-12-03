@@ -106,6 +106,7 @@ class exampleProcessor(processor.ProcessorABC):
         """
         output = self.accumulator.identity()
         dataset = df["dataset"]
+
         cfg = loadConfig()
         # We can access the data frame as usual
         # The dataset is written into the data frame
@@ -156,7 +157,12 @@ class exampleProcessor(processor.ProcessorABC):
         dielectron = electron.choose(2)
         SSelectron = ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)>0].counts>0 )
         OSelectron = ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)<0].counts>0 )
-        OSelectron_m = dielectron.mass.sum()
+        OSelectron_m = dielectron[OSelectron].mass
+        
+        dilepton = electron.cross(muon)
+        OSdilepton = ( dilepton[(dilepton.i0.charge * dilepton.i1.charge)<0].counts>0 )
+
+        OS         = (OSelectron | OSmuon | OSdilepton)
 
         ## MET
         met_pt  = df["MET_pt"]
@@ -192,7 +198,7 @@ class exampleProcessor(processor.ProcessorABC):
         cutflow.addRow( 'twoJet',     twoJet )
         cutflow.addRow( 'oneBTag',     oneBTag )
         cutflow.addRow( 'met',       met )
-
+        cutflow.addRow( 'OS',          OS )
 
         # pre selection of events
         event_selection = cutflow.selection
@@ -218,6 +224,7 @@ class exampleProcessor(processor.ProcessorABC):
 
         ht = jet[jet['goodjet']==1].pt.sum()
         output['HT'].fill(dataset=dataset, ht=ht[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+#        output['HT'].fill(dataset=dataset, ht=df['Jet_pt'][event_selection].sum().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
         st = jet[jet['goodjet']==1].pt.sum() + lepton.pt.sum() + df['MET_pt']
         output['ST'].fill(dataset=dataset, ht=st[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 
@@ -246,8 +253,8 @@ class exampleProcessor(processor.ProcessorABC):
 
         R = (abs((leading_lep.eta.sum()-leading_spectator.eta.sum())**2 + (leading_lep.phi.sum()-leading_spectator.phi.sum()**2)))**0.5  #Change leading_spectator to jet ##ADD ABS()
         output['R'].fill(dataset=dataset, multiplicity = R[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
-        OSe_cuts = OSelectron
-        output['mass_OSelectrons'].fill(dataset=dataset, mass= OSelectron_m[OSe_cuts].flatten(), weight=df['weight'][OSe_cuts]*cfg['lumi'])
+        OSe_cuts =  event_selection
+        output['mass_OSelectrons'].fill(dataset=dataset, mass=dielectron[event_selection].mass.sum().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 
         return output
 

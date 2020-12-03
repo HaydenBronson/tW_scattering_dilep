@@ -189,9 +189,13 @@ for name in histograms:
         axis = 'eta'
         new_eta_bins = hist.Bin('eta', r'$\eta$', 30, -5.5, 5.5)
         histogram = histogram.rebin('eta', new_eta_bins)
+#    elif name == 'HT':
+#        axis = 'ht'
+#        new_ht_bins =  hist.Bin("ht",        r"$H_{T}$ (GeV)", 500, 0, 5000)
+#        histogram = histogram.rebin('ht', new_ht_bins)
     elif name == 'HT':
         axis = 'ht'
-        new_ht_bins =  hist.Bin("ht",        r"$H_{T}$ (GeV)", 500, 0, 5000)
+        new_ht_bins = hist.Bin("ht", r"$H_{T}$ (GeV)", 30, 0, 3000)
         histogram = histogram.rebin('ht', new_ht_bins)
     elif name == 'MT':
         axis = 'pt'
@@ -255,7 +259,7 @@ for name in histograms:
         histogram = histogram.rebin('multiplicity', new_n_bins)
     elif name == 'mass_OSelectrons':
         axis = 'mass'
-        new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 100, 0, 200)
+        new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 40, 0, 160)
         histogram = histogram.rebin('mass', new_mass_bins)
 
     else:
@@ -289,7 +293,7 @@ for name in histograms:
         fig, (ax) = plt.subplots(1, 1, figsize=(7,7))#, gridspec_kw={"height_ratios": (3, 1)}, sharex=True)
 
         # get axes
-        hist.plot1d(histogram[notdata],overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, error_opts=error_opts, order=['diboson', 'TTX', 'TTW','ttbar', 'WZ','DY']) #error_opts??
+        hist.plot1d(histogram[notdata],overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, error_opts=error_opts, order=['diboson', 'TTX', 'TTW','ttbar', 'WZ','DY', 'TTZ']) #error_opts??
        # hist.plot1d(histogram['pseudodata'], overlay="dataset", ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
         scales = { 'tW_scattering': 1 }
         histogram.scale(scales, axis='dataset')
@@ -339,5 +343,5 @@ for name in histograms:
     plt.close()
 
 
-df = getCutFlowTable(output, processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'WZ', 'TTX', 'DY'], lines=['skim','trilep','twoJet','oneBTag', 'met'])
+df = getCutFlowTable(output, processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'WZ', 'TTX', 'DY', 'TTZ'], lines=['skim','trilep','twoJet','oneBTag', 'met'])
 

@@ -151,7 +151,8 @@ class exampleProcessor(processor.ProcessorABC):
         dimuon = muon.choose(2)
         SSmuon = ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)>0].counts>0 )
         OSmuon = ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0].counts>0 )
-        ## Electrons
+        OSmuon_m = dimuon[OSmuon].mass
+## Electrons
         electron = Collections(df, "Electron", "tight").get() #electron = Collections(df, "Electron", "tightTTH").get()
         vetoelectron = Collections(df, "Electron", "veto").get() #vetoelectron = Collections(df, "Electron", "vetoTTH").get()
         dielectron = electron.choose(2)
@@ -173,9 +174,12 @@ class exampleProcessor(processor.ProcessorABC):
         
         ## define selections (maybe move to a different file at some point)
         trilep      = ((df['nLepton']==3) & (df['nVetoLepton']>=3))
-        twoJet      = (jet.counts>=2) # those are any two jets
+        threeJet      = (jet.counts>=3) # those are any two jets
         oneBTag     = (btag.counts>0)
         twoMuon     = ( muon.counts==2 )
+        
+        veto = (~(abs(OSmuon_m-91.2)>10).sum().any() & ~(abs(OSelectron_m-91.2)>10).sum().any() ) # those are any two jet
+
         #Zveto_mu    = ( (dimuon.counts<1) )# | (abs(dimuon.mass - 91)>15) )
         Zveto_mu_wide    = ( (abs(dimuon.mass-91.)<15).counts<1 )
         Zveto_ele_wide   = ( (abs(dielectron.mass-91.)<15).counts<1 )
@@ -195,10 +199,11 @@ class exampleProcessor(processor.ProcessorABC):
         
 	#IDK if these are right?????
         cutflow.addRow( 'trilep',       trilep )
-        cutflow.addRow( 'twoJet',     twoJet )
+        cutflow.addRow( 'threeJet',     threeJet )
         cutflow.addRow( 'oneBTag',     oneBTag )
         cutflow.addRow( 'met',       met )
         cutflow.addRow( 'OS',          OS )
+        cutflow.addRow( 'veto', veto)
 
         # pre selection of events
         event_selection = cutflow.selection
@@ -311,14 +316,14 @@ def main():
 if __name__ == "__main__":
     output = main()
 
-df = getCutFlowTable(output, processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ'], lines=['trilep', 'twoJet', 'oneBTag', 'met'])
+df = getCutFlowTable(output, processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ'], lines=['trilep', 'twoJet', 'oneBTag', 'met', 'veto'])
 
 #print percentage table
 percentoutput = {}
 for process in ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ']:
-    percentoutput[process] = {'trilep':0, 'twoJet':0, 'oneBTag':0, 'met':0}
+    percentoutput[process] = {'trilep':0, 'twoJet':0, 'oneBTag':0, 'met':0, 'veto':0}
     lastnum = output[process]['skim']
-    for select in ['trilep', 'twoJet', 'oneBTag', 'met']:
+    for select in ['trilep', 'twoJet', 'oneBTag', 'met', 'veto']:
         thisnum = output[process][select]
         thiser = output[process][select+'_w2']
         if lastnum==0:
@@ -330,7 +335,7 @@ for process in ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 
         percentoutput[process][select] = "%s +/- %s"%(round(percent,2), round(err, 2))
         lastnum = thisnum
 df_p = pd.DataFrame(data=percentoutput)
-df_p = df_p.reindex(['trilep', 'twoJet', 'oneBTag', 'met'])
+df_p = df_p.reindex(['trilep', 'twoJet', 'oneBTag', 'met', 'veto'])
 print(df)
 print(df_p)
 

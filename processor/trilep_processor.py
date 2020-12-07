@@ -91,7 +91,8 @@ class exampleProcessor(processor.ProcessorABC):
             'fw_max_deltaeta':  hist.Hist('Counts', dataset_axis, eta_axis),
             'R':          hist.Hist("Counts", dataset_axis, multiplicity_axis),
             'mass_OSelectrons':    hist.Hist("Counts", dataset_axis, mass_axis),
-
+            'mass_Z_OSele':    hist.Hist("Counts", dataset_axis, mass_axis),
+            'mass_Z_OSmu':    hist.Hist("Counts", dataset_axis, mass_axis),
          })
     
 
@@ -260,6 +261,14 @@ class exampleProcessor(processor.ProcessorABC):
         output['R'].fill(dataset=dataset, multiplicity = R[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
         OSe_cuts =  event_selection
         output['mass_OSelectrons'].fill(dataset=dataset, mass=dielectron[event_selection].mass.sum().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        
+        #closest to Z boson mass update
+        OS_e = (event_selection & OSelectron)
+        elesort = abs(dielectron[OS_e].mass-91.2).argsort(ascending=True).argmin()
+        OS_mu = (event_selection & OSmuon)
+        musort = abs(dimuon[OS_mu].mass-91.2).argsort(ascending=True).argmin()      
+        output['mass_Z_OSele'].fill(dataset=dataset, mass= dielectron[OS_e][elesort].mass.flatten(), weight=df['weight'][OS_e]*cfg['lumi'])
+        output['mass_Z_OSmu'].fill(dataset=dataset, mass= dimuon[OS_mu][musort].mass.flatten(), weight=df['weight'][OS_mu]*cfg['lumi'])
 
         return output
 
@@ -283,6 +292,7 @@ def main():
     histograms += ['N_ele', 'N_mu', 'N_diele', 'N_dimu', 'N_jet', 'N_b', 'N_spec', 'pt_spec_max', 'eta_spec_max']
     histograms += ['MET_pt', 'MT', 'HT', 'ST', 'mbj_max', 'mjj_max', 'mlb_max', 'mlb_min', 'mlj_max', 'mlj_min']
     histograms += ['MET_lep_pt', 'trailing_lep_pt', 'leading_lep_pt', 'fw_pt', 'fw_eta', 'R', 'mass_OSelectrons']
+    histograms += ['mass_Z_OSele', 'mass_Z_OSmu']
     # initialize cache
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['singleLep']), serialized=True)
     if not overwrite:
@@ -338,4 +348,3 @@ df_p = pd.DataFrame(data=percentoutput)
 df_p = df_p.reindex(['trilep', 'twoJet', 'oneBTag', 'met', 'veto'])
 print(df)
 print(df_p)
-

@@ -165,6 +165,7 @@ class exampleProcessor(processor.ProcessorABC):
         OSdilepton = ( dilepton[(dilepton.i0.charge * dilepton.i1.charge)<0].counts>0 )
 
         OS         = (OSelectron | OSmuon | OSdilepton)
+        OS_cutflow =  ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)>0].counts>0 ) #& ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0].counts>0 )
 
         ## MET
         met_pt  = df["MET_pt"]
@@ -179,7 +180,7 @@ class exampleProcessor(processor.ProcessorABC):
         oneBTag     = (btag.counts>0)
         twoMuon     = ( muon.counts==2 )
         
-        veto = (~(abs(OSmuon_m-91.2)>10).sum().any() & ~(abs(OSelectron_m-91.2)>10).sum().any() ) # those are any two jet
+        veto = ((abs(OSmuon_m-91.2)>10).sum().any() & (abs(OSelectron_m-91.2)>10).sum().any()) # those are any two jet
 
         #Zveto_mu    = ( (dimuon.counts<1) )# | (abs(dimuon.mass - 91)>15) )
         Zveto_mu_wide    = ( (abs(dimuon.mass-91.)<15).counts<1 )
@@ -203,7 +204,7 @@ class exampleProcessor(processor.ProcessorABC):
         cutflow.addRow( 'threeJet',     threeJet )
         cutflow.addRow( 'oneBTag',     oneBTag )
         cutflow.addRow( 'met',       met )
-        cutflow.addRow( 'OS',          OS )
+        cutflow.addRow( 'OS',          OS_cutflow )
         cutflow.addRow( 'veto', veto)
 
         # pre selection of events

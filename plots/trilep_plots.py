@@ -261,6 +261,14 @@ for name in histograms:
         axis = 'mass'
         new_mass_bins =  hist.Bin('mass', r'$M(b, light) \ (GeV)$', 40, 0, 160)
         histogram = histogram.rebin('mass', new_mass_bins)
+    elif name == 'mass_Z_OSele':
+        axis = 'mass'
+        new_mass_bins =  hist.Bin('mass', r'$M(Z_OSele) \ (GeV)$', 25, 0, 500)
+        histogram = histogram.rebin('mass', new_mass_bins)
+    elif name == 'mass_Z_OSmu':
+        axis = 'mass'
+        new_mass_bins =  hist.Bin('mass', r'$M(Z_OSmu) \ (GeV)$', 25, 0, 500)
+        histogram = histogram.rebin('mass', new_mass_bins)
 
     else:
         skip = True

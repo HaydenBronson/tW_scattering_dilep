@@ -267,7 +267,7 @@ class exampleProcessor(processor.ProcessorABC):
         OS_e = (event_selection & OSelectron)
         elesort = abs(dielectron[OS_e].mass-91.2).argsort(ascending=True).argmin()
         OS_mu = (event_selection & OSmuon)
-        musort = abs(dimuon[OS_mu].mass-91.2).argsort(ascending=True).argmin()      
+        musort = abs(dimuon[OS_mu].mass-91.2).argsort(ascending=True).argmin()
         output['mass_Z_OSele'].fill(dataset=dataset, mass= dielectron[OS_e][elesort].mass.flatten(), weight=df['weight'][OS_e]*cfg['lumi'])
         output['mass_Z_OSmu'].fill(dataset=dataset, mass= dimuon[OS_mu][musort].mass.flatten(), weight=df['weight'][OS_mu]*cfg['lumi'])
 

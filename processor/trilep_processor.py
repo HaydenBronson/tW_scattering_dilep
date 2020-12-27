@@ -152,6 +152,7 @@ class exampleProcessor(processor.ProcessorABC):
         dimuon = muon.choose(2)
         SSmuon = ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)>0].counts>0 )
         OSmuon = ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0].counts>0 )
+        OS_dimuon = dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0]
         OSmuon_m = dimuon[OSmuon].mass
 ## Electrons
         electron = Collections(df, "Electron", "tight").get() #electron = Collections(df, "Electron", "tightTTH").get()
@@ -159,13 +160,14 @@ class exampleProcessor(processor.ProcessorABC):
         dielectron = electron.choose(2)
         SSelectron = ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)>0].counts>0 )
         OSelectron = ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)<0].counts>0 )
+        OS_dielectron = dielectron[(dielectron.i0.charge * dielectron.i1.charge)<0]
         OSelectron_m = dielectron[OSelectron].mass
         
         dilepton = electron.cross(muon)
         OSdilepton = ( dilepton[(dilepton.i0.charge * dilepton.i1.charge)<0].counts>0 )
 
         OS         = (OSelectron | OSmuon | OSdilepton)
-        OS_cutflow =  ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)>0].counts>0 ) #& ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0].counts>0 )
+        OS_cutflow =  ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)>0].counts>0 ) | ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0].counts>0 )
 
         ## MET
         met_pt  = df["MET_pt"]
@@ -190,6 +192,7 @@ class exampleProcessor(processor.ProcessorABC):
         met         = (met_pt > 50)
         fwdJet = (spectator.counts>0)
         fwdJet50 = ((leading_spectator.pt>50).counts>0)
+        offZ_selection = (abs(OS_dimuon.mass-91.2)>15).all() & (abs(OS_dielectron.mass-91.2)>15).all()
 
 
         ## work on the cutflow
@@ -204,8 +207,8 @@ class exampleProcessor(processor.ProcessorABC):
         cutflow.addRow( 'threeJet',     threeJet )
         cutflow.addRow( 'oneBTag',     oneBTag )
         cutflow.addRow( 'met',       met )
-        cutflow.addRow( 'OS',          OS_cutflow )
-        cutflow.addRow( 'veto', veto)
+        #cutflow.addRow( 'OS',          OS_cutflow )
+        cutflow.addRow( 'offZ', offZ_selection)
 
         # pre selection of events
         event_selection = cutflow.selection

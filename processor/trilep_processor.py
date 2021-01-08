@@ -182,7 +182,7 @@ class exampleProcessor(processor.ProcessorABC):
         oneBTag     = (btag.counts>0)
         twoMuon     = ( muon.counts==2 )
         lightCentral = jet[(jet['goodjet']==1) & (jet['bjet']==0) & (abs(jet.eta)<2.4) & (jet.pt>30)]
-        hpt_fwd = ((jet.pt > 40).any() & (abs(jet.eta) > 1.7).any() & (abs(jet.eta) < 4.7).any())
+        hpt_fwd = ((fw.pt > 40).any() & (abs(fw.eta) > 1.7).any() & (abs(fw.eta) < 4.7).any() )
         
         veto = ((abs(OSmuon_m-91.2)>10).sum().any() & (abs(OSelectron_m-91.2)>10).sum().any()) # those are any two jet
 
@@ -285,7 +285,7 @@ class exampleProcessor(processor.ProcessorABC):
 
 def main():
 
-    overwrite = False
+    overwrite = True
 
     # load the config and the cache
     cfg = loadConfig()

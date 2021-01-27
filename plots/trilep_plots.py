@@ -269,7 +269,14 @@ for name in histograms:
         axis = 'mass'
         new_mass_bins =  hist.Bin('mass', r'$M(Z_OSmu) \ (GeV)$', 25, 0, 500)
         histogram = histogram.rebin('mass', new_mass_bins)
-
+    elif name == 'MET_phi':
+        axis = 'eta'
+        new_eta_bins = hist.Bin('eta', r'$\eta$', 30, -5.5, 5.5)
+        histogram = histogram.rebin('eta', new_eta_bins)
+    elif name == 'MET_phiavg':
+        axis = 'eta'
+        new_eta_bins = hist.Bin('eta', r'$\eta$', 30, -5.5, 5.5)
+        histogram = histogram.rebin('eta', new_eta_bins)
     else:
         skip = True
 

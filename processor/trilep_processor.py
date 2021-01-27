@@ -93,6 +93,7 @@ class exampleProcessor(processor.ProcessorABC):
             'mass_OSelectrons':    hist.Hist("Counts", dataset_axis, mass_axis),
             'mass_Z_OSele':    hist.Hist("Counts", dataset_axis, mass_axis),
             'mass_Z_OSmu':    hist.Hist("Counts", dataset_axis, mass_axis),
+            'MET_phi':    hist.Hist("Counts", dataset_axis, eta_axis),
          })
     
 
@@ -210,7 +211,7 @@ class exampleProcessor(processor.ProcessorABC):
         cutflow.addRow( 'oneBTag',     oneBTag )
         cutflow.addRow( 'met',       met )
         cutflow.addRow( 'offZ', offZ_selection)
-        cutflow.addRow(  'central3', (lightCentral.counts>=3))
+        cutflow.addRow(  'central2', (lightCentral.counts>=2))
         cutflow.addRow( 'pt40_fwd', hpt_fwd)
 
         # pre selection of events
@@ -276,6 +277,8 @@ class exampleProcessor(processor.ProcessorABC):
         musort = abs(dimuon[OS_mu].mass-91.2).argsort(ascending=True).argmin()
         output['mass_Z_OSele'].fill(dataset=dataset, mass= dielectron[OS_e][elesort].mass.flatten(), weight=df['weight'][OS_e]*cfg['lumi'])
         output['mass_Z_OSmu'].fill(dataset=dataset, mass= dimuon[OS_mu][musort].mass.flatten(), weight=df['weight'][OS_mu]*cfg['lumi'])
+        output['MET_phi'].fill(dataset=dataset, eta= df["MET_phi"][event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+
 
         return output
 
@@ -299,7 +302,7 @@ def main():
     histograms += ['N_ele', 'N_mu', 'N_diele', 'N_dimu', 'N_jet', 'N_b', 'N_spec', 'pt_spec_max', 'eta_spec_max']
     histograms += ['MET_pt', 'MT', 'HT', 'ST', 'mbj_max', 'mjj_max', 'mlb_max', 'mlb_min', 'mlj_max', 'mlj_min']
     histograms += ['MET_lep_pt', 'trailing_lep_pt', 'leading_lep_pt', 'fw_pt', 'fw_eta', 'R', 'mass_OSelectrons']
-    histograms += ['mass_Z_OSele', 'mass_Z_OSmu']
+    histograms += ['mass_Z_OSele', 'mass_Z_OSmu', 'MET_phi']
     # initialize cache
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['singleLep']), serialized=True)
     if not overwrite:
@@ -333,14 +336,14 @@ def main():
 if __name__ == "__main__":
     output = main()
 
-df = getCutFlowTable(output, processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ'], lines=['trilep', 'twoJet', 'oneBTag', 'met', 'offZ', 'central3', 'pt40_fwd'])
+df = getCutFlowTable(output, processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ'], lines=['trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central3', 'pt40_fwd'])
 
 #print percentage table
 percentoutput = {}
 for process in ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ']:
-    percentoutput[process] = {'trilep':0, 'twoJet':0, 'oneBTag':0, 'met':0, 'offZ':0, 'central3':0, 'pt40_fwd':0}
+    percentoutput[process] = {'trilep':0, 'threeJet':0, 'oneBTag':0, 'met':0, 'offZ':0, 'central3':0, 'pt40_fwd':0}
     lastnum = output[process]['skim']
-    for select in ['trilep', 'twoJet', 'oneBTag', 'met', 'offZ', 'central3', 'pt40_fwd']:
+    for select in ['trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central3', 'pt40_fwd']:
         thisnum = output[process][select]
         thiser = output[process][select+'_w2']
         if lastnum==0:
@@ -352,6 +355,6 @@ for process in ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 
         percentoutput[process][select] = "%s +/- %s"%(round(percent,2), round(err, 2))
         lastnum = thisnum
 df_p = pd.DataFrame(data=percentoutput)
-df_p = df_p.reindex(['trilep', 'twoJet', 'oneBTag', 'met', 'offZ', 'central3', 'pt40_fwd'])
+df_p = df_p.reindex(['trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central3', 'pt40_fwd'])
 print(df)
 print(df_p)

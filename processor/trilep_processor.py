@@ -178,7 +178,8 @@ class exampleProcessor(processor.ProcessorABC):
         
         
         ## define selections (maybe move to a different file at some point)
-        trilep      = ((df['nLepton']==3) & (df['nVetoLepton']>=3))
+        trilepveto      = (df['nVetoLepton']>=3)
+	trilep      = (df['nLepton']==3)
         threeJet      = (jet.counts>=3) # those are any two jets
         oneBTag     = (btag.counts>0)
         twoMuon     = ( muon.counts==2 )
@@ -207,7 +208,8 @@ class exampleProcessor(processor.ProcessorABC):
         
 	#IDK if these are right?????
         cutflow.addRow( 'skim',   None)
-	cutflow.addRow( 'trilep',       trilep )
+	cutflow.addRow( 'trilepveto',       trilepveto )
+	cutflow.addRow( 'trilep', trilep
         cutflow.addRow( 'threeJet',     threeJet )
         cutflow.addRow( 'oneBTag',     oneBTag )
         cutflow.addRow( 'met',       met )
@@ -337,14 +339,14 @@ def main():
 if __name__ == "__main__":
     output = main()
 
-df = getCutFlowTable(output, processes= ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ'], lines=['skim','trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])
+df = getCutFlowTable(output, processes= ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ'], lines=['skim','trilepveto', 'trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])
 
 #print percentage table
 percentoutput = {}
 for process in ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ']:
-    percentoutput[process] = {'skim':0,'trilep':0, 'threeJet':0, 'oneBTag':0, 'met':0, 'offZ':0, 'central2':0, 'pt40_fwd':0}
+    percentoutput[process] = {'skim':0,'trilepveto':0, 'trilep':0, 'threeJet':0, 'oneBTag':0, 'met':0, 'offZ':0, 'central2':0, 'pt40_fwd':0}
     lastnum = output[process]['skim']
-    for select in ['skim', 'trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd']:
+    for select in ['skim', 'trilepveto', 'trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd']:
         thisnum = output[process][select]
         thiser = output[process][select+'_w2']
         if lastnum==0:
@@ -356,6 +358,6 @@ for process in ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 
         percentoutput[process][select] = "%s +/- %s"%(round(percent,2), round(err, 2))
         lastnum = thisnum
 df_p = pd.DataFrame(data=percentoutput)
-df_p = df_p.reindex(['skim','trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])
+df_p = df_p.reindex(['skim','trilepveto', 'trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])
 print(df)
 print(df_p)

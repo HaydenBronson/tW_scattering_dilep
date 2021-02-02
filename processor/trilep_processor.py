@@ -206,7 +206,8 @@ class exampleProcessor(processor.ProcessorABC):
         cutflow = Cutflow(output, df, cfg, processes)
         
 	#IDK if these are right?????
-        cutflow.addRow( 'trilep',       trilep )
+        cutflow.addRow( 'skim',   None)
+	cutflow.addRow( 'trilep',       trilep )
         cutflow.addRow( 'threeJet',     threeJet )
         cutflow.addRow( 'oneBTag',     oneBTag )
         cutflow.addRow( 'met',       met )
@@ -343,7 +344,7 @@ percentoutput = {}
 for process in ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ']:
     percentoutput[process] = {'skim':0,'trilep':0, 'threeJet':0, 'oneBTag':0, 'met':0, 'offZ':0, 'central2':0, 'pt40_fwd':0}
     lastnum = output[process]['skim']
-    for select in ['trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd']:
+    for select in ['skim', 'trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd']:
         thisnum = output[process][select]
         thiser = output[process][select+'_w2']
         if lastnum==0:

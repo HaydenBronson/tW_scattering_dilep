@@ -179,7 +179,7 @@ class exampleProcessor(processor.ProcessorABC):
         
         ## define selections (maybe move to a different file at some point)
         trilepveto      = (df['nVetoLepton']>=3)
-	trilep      = (df['nLepton']==3)
+        trilep          = (df['nLepton']==3)
         threeJet      = (jet.counts>=3) # those are any two jets
         oneBTag     = (btag.counts>0)
         twoMuon     = ( muon.counts==2 )
@@ -208,8 +208,8 @@ class exampleProcessor(processor.ProcessorABC):
         
 	#IDK if these are right?????
         cutflow.addRow( 'skim',   None)
-	cutflow.addRow( 'trilepveto',       trilepveto )
-	cutflow.addRow( 'trilep', trilep
+        cutflow.addRow( 'trilepveto', trilepveto)
+        cutflow.addRow( 'trilep', trilep)
         cutflow.addRow( 'threeJet',     threeJet )
         cutflow.addRow( 'oneBTag',     oneBTag )
         cutflow.addRow( 'met',       met )
@@ -359,5 +359,5 @@ for process in ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 
         lastnum = thisnum
 df_p = pd.DataFrame(data=percentoutput)
 df_p = df_p.reindex(['skim','trilepveto', 'trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])
-print(df)
-print(df_p)
+print(df['tW_scattering'], df['ttbar'], df['diboson'], df['TTW'], df['TTX'], df['DY'], df['TTZ'], df['WZ'])
+print(df_p['tW_scattering'], df_p['ttbar'], df_p['diboson'], df_p['TTW'], df_p['TTX'], df_p['DY'], df_p['TTZ'], df_p['WZ'])

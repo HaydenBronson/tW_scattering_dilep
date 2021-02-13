@@ -14,7 +14,7 @@ from coffea.processor.accumulator import AccumulatorABC
 #from coffea.analysis_objects import JaggedCandidateArray
 from coffea import hist
 import pandas as pd
-#import uproot_methods
+import uproot_methods
 import awkward
 
 #from memory_profiler import profile
@@ -128,7 +128,7 @@ class exampleProcessor(processor.ProcessorABC):
 
 
 ## Jets
-        jet = JaggedCandidateArray.candidatesfromcounts(
+        jet = ak.Array.candidatesfromcounts(
             df['nJet'],
             pt = df['Jet_pt'].content,
             eta = df['Jet_eta'].content,

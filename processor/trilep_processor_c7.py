@@ -177,36 +177,50 @@ class exampleProcessor(processor.ProcessorABC):
         OSelectron_m = dielectron[OSelectron].mass
         
         dilepton = electron.cross(muon)
-        OSdilepton = ( dilepton[(dilepton.i0.charge * dilepton.i1.charge)<0].counts>0 )
+        OSdilepton = ak.num(( dilepton[(dilepton.i0.charge * dilepton.i1.charge)<0] ), axis=1)>0
+#        OSdilepton = ( dilepton[(dilepton.i0.charge * dilepton.i1.charge)<0].counts>0 )
 
         OS         = (OSelectron | OSmuon | OSdilepton)
-        OS_cutflow =  ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)>0].counts>0 ) | ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0].counts>0 )
+        OS_cutflow = ak.num(( dielectron[(dielectron.i0.charge * dielectron.i1.charge)>0] ), axis=1)>0 | ak.num(( dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0]), axis = 1)>0
+#        OS_cutflow =  ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)>0].counts>0 ) | ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0].counts>0 )
 
         ## MET
         met_pt  = df["MET_pt"]
         met_phi = df["MET_phi"]
 
-        ## Event classifieres
+        threeJet= (ak.num(jet, axis = 1) >=3) # those are any two jets
+        oneBTag     = (ak.num(btag, axis = 1)>0)
+        twoMuon     = (ak.num( muon, axis = 1)==2 )
+# Event classifieres
         
         
         ## define selections (maybe move to a different file at some point)
-        trilep      = ((df['nLepton']==3) & (df['nVetoLepton']>=3))
-        threeJet      = (jet.counts>=3) # those are any two jets
-        oneBTag     = (btag.counts>0)
-        twoMuon     = ( muon.counts==2 )
+#        trilep      = ((df['nLepton']==3) & (df['nVetoLepton']>=3))
+#	threeJet      = (jet.counts>=3) # those are any two jets oneBTag     = (btag.counts>0)
+#        twoMuon     = ( muon.counts==2 )
         lightCentral = jet[(jet['goodjet']==1) & (jet['bjet']==0) & (abs(jet.eta)<2.4) & (jet.pt>30)]
         hpt_fwd = ((fw.pt > 40) & (abs(fw.eta) > 1.7) & (abs(fw.eta) < 4.7) ).all()
         
         veto = ((abs(OSmuon_m-91.2)>10).sum().any() & (abs(OSelectron_m-91.2)>10).sum().any()) # those are any two jet
 
         #Zveto_mu    = ( (dimuon.counts<1) )# | (abs(dimuon.mass - 91)>15) )
-        Zveto_mu_wide    = ( (abs(dimuon.mass-91.)<15).counts<1 )
-        Zveto_ele_wide   = ( (abs(dielectron.mass-91.)<15).counts<1 )
-        Zveto_mu_narrow    = ( (abs(dimuon.mass-91.)<10).counts<1 )
-        Zveto_ele_narrow   = ( (abs(dielectron.mass-91.)<10).counts<1 )
+#        Zveto_mu_wide    = ( (abs(dimuon.mass-91.)<15).counts<1 )
+#        Zveto_ele_wide   = ( (abs(dielectron.mass-91.)<15).counts<1 )
+#        Zveto_mu_narrow    = ( (abs(dimuon.mass-91.)<10).counts<1 )
+#        Zveto_ele_narrow   = ( (abs(dielectron.mass-91.)<10).counts<1 )
+#        met         = (met_pt > 50)
+#        fwdJet = (spectator.counts>0)
+#        fwdJet50 = ((leading_spectator.pt>50).counts>0)
+        Zveto_mu_wide    = (ak.num (abs(dimuon.mass-91.)<15, axis=1) <1 )
+        Zveto_ele_wide   = (ak.num( abs(dielectron.mass-91.)<15, axis=1)<1 )
+        Zveto_mu_narrow    = (ak.num (abs(dimuon.mass-91.)<10, axis=1)<1 )
+        Zveto_ele_narrow   = ( ak.num(abs(dielectron.mass-91.)<10, axis=1) <1 )
         met         = (met_pt > 50)
-        fwdJet = (spectator.counts>0)
-        fwdJet50 = ((leading_spectator.pt>50).counts>0)
+        fwdJet = (ak.num(spectator, axis=1)>0)
+        fwdJet50 =(ak.num((leading_spectator.pt>50), axis=1)>0)
+
+
+
         offZ_selection = (abs(OS_dimuon.mass-91.2)>15).all() & (abs(OS_dielectron.mass-91.2)>15).all()
 
 
@@ -218,12 +232,19 @@ class exampleProcessor(processor.ProcessorABC):
         cutflow = Cutflow(output, df, cfg, processes)
         
 	#IDK if these are right?????
+#        cutflow.addRow( 'trilep',       trilep )
+#        cutflow.addRow( 'threeJet',     threeJet )
+#        cutflow.addRow( 'oneBTag',     oneBTag )
+#        cutflow.addRow( 'met',       met )
+#        cutflow.addRow( 'offZ', offZ_selection)
+#        cutflow.addRow(  'central2', (lightCentral.counts>=2))
+#        cutflow.addRow( 'pt40_fwd', hpt_fwd)
         cutflow.addRow( 'trilep',       trilep )
         cutflow.addRow( 'threeJet',     threeJet )
         cutflow.addRow( 'oneBTag',     oneBTag )
         cutflow.addRow( 'met',       met )
         cutflow.addRow( 'offZ', offZ_selection)
-        cutflow.addRow(  'central2', (lightCentral.counts>=2))
+        cutflow.addRow(  'central2', (ak.num(lightCentral, axis=1)>=2))
         cutflow.addRow( 'pt40_fwd', hpt_fwd)
 
         # pre selection of events
@@ -231,19 +252,37 @@ class exampleProcessor(processor.ProcessorABC):
 
         ## And fill the histograms
         # just the number of electrons and muons
-        output['N_ele'].fill(dataset=dataset, multiplicity=electron[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
-        output['N_mu'].fill(dataset=dataset, multiplicity=muon[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
+#        output['N_ele'].fill(dataset=dataset, multiplicity=electron[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
+#        output['N_mu'].fill(dataset=dataset, multiplicity=muon[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
         # N jet and N b without selections on those
-        output['N_jet'].fill(dataset=dataset, multiplicity=jet[trilep & met].counts, weight=df['weight'][trilep & met]*cfg['lumi'])
-        output['N_b'].fill(dataset=dataset, multiplicity=btag[trilep & met].counts, weight=df['weight'][trilep & met]*cfg['lumi'])
+#        output['N_jet'].fill(dataset=dataset, multiplicity=jet[trilep & met].counts, weight=df['weight'][trilep & met]*cfg['lumi'])
+#        output['N_b'].fill(dataset=dataset, multiplicity=btag[trilep & met].counts, weight=df['weight'][trilep & met]*cfg['lumi'])
         # forward jet properties
-        output['N_spec'].fill(dataset=dataset, multiplicity=spectator[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
-        output['pt_spec_max'].fill(dataset=dataset, pt=leading_spectator[event_selection & (spectator.counts>0)].pt.flatten(), weight=df['weight'][event_selection & (spectator.counts>0)]*cfg['lumi'])
-        output['eta_spec_max'].fill(dataset=dataset, eta=leading_spectator[event_selection & (spectator.counts>0)].eta.flatten(), weight=df['weight'][event_selection & (spectator.counts>0)]*cfg['lumi'])
+#        output['N_spec'].fill(dataset=dataset, multiplicity=spectator[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
+#        output['pt_spec_max'].fill(dataset=dataset, pt=leading_spectator[event_selection & (spectator.counts>0)].pt.flatten(), weight=df['weight'][event_selection & (spectator.counts>0)]*cfg['lumi'])
+#        output['eta_spec_max'].fill(dataset=dataset, eta=leading_spectator[event_selection & (spectator.counts>0)].eta.flatten(), weight=df['weight'][event_selection & (spectator.counts>0)]*cfg['lumi'])
         
         # something a bit more tricky
-        output['N_diele'].fill(dataset=dataset, multiplicity=dielectron[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
-        output['N_dimu'].fill(dataset=dataset, multiplicity=dimuon[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
+#        output['N_diele'].fill(dataset=dataset, multiplicity=dielectron[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
+#        output['N_dimu'].fill(dataset=dataset, multiplicity=dimuon[event_selection].counts, weight=df['weight'][event_selection]*cfg['lumi'])
+
+        ## And fill the histograms
+        # just the number of electrons and muons
+        output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(electron[event_selection], axis=1), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(muon[event_selection], axis=1), weight=df['weight'][event_selection]*cfg['lumi'])
+        # N jet and N b without selections on those
+        output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet[trilep & met], axis=1), weight=df['weight'][trilep & met]*cfg['lumi'])
+        output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag[trilep & met],axis=1), weight=df['weight'][trilep & met]*cfg['lumi'])
+        # forward jet properties
+        output['N_spec'].fill(dataset=dataset, multiplicity=ak.num(spectator[event_selection],axis=1), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['pt_spec_max'].fill(dataset=dataset, pt=leading_spectator[event_selection & (ak.num(spectator, axis=1)>0)].pt.flatten(), weight=df['weight'][event_selection & (ak.num(spectator, axis=1)>0)]*cfg['lumi'])
+        output['eta_spec_max'].fill(dataset=dataset, eta=leading_spectator[event_selection & (ak.num(spectator, axis=1)>0)].eta.flatten(), weight=df['weight'][event_selection & (ak.num(spectator, axis=1)>0)]*cfg['lumi'])
+
+        # something a bit more tricky
+        output['N_diele'].fill(dataset=dataset, multiplicity=ak.num(dielectron[event_selection], axis=1), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['N_dimu'].fill(dataset=dataset, multiplicity=ak.num(dimuon[event_selection], axis=1), weight=df['weight'][event_selection]*cfg['lumi'])
+
+
 
         output['MET_pt'].fill(dataset=dataset, pt=df["MET_pt"][event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
         output['MT'].fill(dataset=dataset, pt=df["MT"][event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])

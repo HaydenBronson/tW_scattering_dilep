@@ -148,7 +148,7 @@ class exampleProcessor(processor.ProcessorABC):
 
 
         ## Muons
-        muon = Collections(df, "Muon", "tight").get() #muon = Collections(df, "Muon", "tightTTH").get()
+        muon = Collections(df, "Muon", "tightTTH").get() #muon = Collections(df, "Muon", "tightTTH").get()
         vetomuon = Collections(df, "Muon", "veto").get() #vetomuon = Collections(df, "Muon", "vetoTTH").get()
         dimuon = muon.choose(2)
         SSmuon = ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)>0].counts>0 )
@@ -156,7 +156,7 @@ class exampleProcessor(processor.ProcessorABC):
         OS_dimuon = dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0]
         OSmuon_m = dimuon[OSmuon].mass
 ## Electrons
-        electron = Collections(df, "Electron", "tight").get() #electron = Collections(df, "Electron", "tightTTH").get()
+        electron = Collections(df, "Electron", "tightTTH").get() #electron = Collections(df, "Electron", "tightTTH").get()
         vetoelectron = Collections(df, "Electron", "veto").get() #vetoelectron = Collections(df, "Electron", "vetoTTH").get()
         dielectron = electron.choose(2)
         SSelectron = ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)>0].counts>0 )

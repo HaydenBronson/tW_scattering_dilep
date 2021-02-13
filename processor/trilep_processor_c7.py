@@ -11,22 +11,34 @@ import numpy as np
 from tqdm.auto import tqdm
 import coffea.processor as processor
 from coffea.processor.accumulator import AccumulatorABC
-from coffea.analysis_objects import JaggedCandidateArray
+#from coffea.analysis_objects import JaggedCandidateArray
 from coffea import hist
 import pandas as pd
-import uproot_methods
+#import uproot_methods
 import awkward
 
-from memory_profiler import profile
+#from memory_profiler import profile
 
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 
-from Tools.helpers import loadConfig, getCutFlowTable, mergeArray
+###NEW COFFEA IMPORTS
+import awkward1 as ak
 
-from Tools.objects import Collections
-from Tools.cutflow import Cutflow
+from coffea import processor, hist
+from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
+from coffea.analysis_tools import Weights, PackedSelection
+
+import numpy as np
+
+from Tools.objects import * #if there is an issue after pulling tools remove ../
+from Tools.basic_objects import *
+from Tools.cutflow import *
+from Tools.config_helpers import *
+from Tools.triggers import *
+from Tools.btag_scalefactors import *
+from Tools.ttH_lepton_scalefactors import *
 
 # This just tells matplotlib not to open any
 # interactive windows.
@@ -150,7 +162,7 @@ class exampleProcessor(processor.ProcessorABC):
         ## Muons
         muon = Collections(df, "Muon", "tight").get() #muon = Collections(df, "Muon", "tightTTH").get()
         vetomuon = Collections(df, "Muon", "veto").get() #vetomuon = Collections(df, "Muon", "vetoTTH").get()
-        dimuon = muon.choose(2)
+        dimuon = choose(muon,2)
         SSmuon = ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)>0].counts>0 )
         OSmuon = ( dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0].counts>0 )
         OS_dimuon = dimuon[(dimuon.i0.charge * dimuon.i1.charge)<0]
@@ -158,7 +170,7 @@ class exampleProcessor(processor.ProcessorABC):
 ## Electrons
         electron = Collections(df, "Electron", "tight").get() #electron = Collections(df, "Electron", "tightTTH").get()
         vetoelectron = Collections(df, "Electron", "veto").get() #vetoelectron = Collections(df, "Electron", "vetoTTH").get()
-        dielectron = electron.choose(2)
+        dielectron = choose(electron, 2)
         SSelectron = ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)>0].counts>0 )
         OSelectron = ( dielectron[(dielectron.i0.charge * dielectron.i1.charge)<0].counts>0 )
         OS_dielectron = dielectron[(dielectron.i0.charge * dielectron.i1.charge)<0]
@@ -243,7 +255,7 @@ class exampleProcessor(processor.ProcessorABC):
         output['ST'].fill(dataset=dataset, ht=st[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 
         b_nonb_pair = btag.cross(light)
-        jet_pair = light.choose(2)
+        jet_pair = choose(light, 2)
         output['mbj_max'].fill(dataset=dataset, mass=b_nonb_pair[event_selection].mass.max().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
         output['mjj_max'].fill(dataset=dataset, mass=jet_pair[event_selection].mass.max().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
 

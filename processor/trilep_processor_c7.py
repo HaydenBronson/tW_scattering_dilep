@@ -1,5 +1,5 @@
 ###NEW COFFEA IMPORTS
-import awkward1 as ak
+import awkward as ak
 
 from coffea import processor, hist
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
@@ -144,51 +144,48 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['eta_spec_max'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].eta)), weight=weight.weight()[event_selection & (ak.num(spectator, axis=1)>0)])
 
 
-
-
-        # --------------------------------------------------Update Division Line----------------------------------------------------------------------
         # something a bit more tricky
-        output['N_diele'].fill(dataset=dataset, multiplicity=ak.num(dielectron[event_selection], axis=1), weight=df['weight'][event_selection]*cfg['lumi'])
-        output['N_dimu'].fill(dataset=dataset, multiplicity=ak.num(dimuon[event_selection], axis=1), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['N_diele'].fill(dataset=dataset, multiplicity=ak.num(dielectron)[event_selection], weight=weight.weight()[event_selection])
+        output['N_dimu'].fill(dataset=dataset, multiplicity=ak.num(dimuon)[event_selection], weight=weight.weight()[event_selection])
 
 
 
-        output['MET_pt'].fill(dataset=dataset, pt=df["MET_pt"][event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
-        output['MT'].fill(dataset=dataset, pt=df["MT"][event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        """output['MET_pt'].fill(dataset=dataset, pt=df["MET_pt"][event_selection].flatten(), weight=weight.weight()[event_selection])
+        output['MT'].fill(dataset=dataset, pt=df["MT"][event_selection].flatten(), weight=weight.weight()[event_selection])
 
         ht = jet[jet['goodjet']==1].pt.sum()
-        output['HT'].fill(dataset=dataset, ht=ht[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
-#        output['HT'].fill(dataset=dataset, ht=df['Jet_pt'][event_selection].sum().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['HT'].fill(dataset=dataset, ht=ht[event_selection].flatten(), weight=weight.weight()[event_selection])
+#        output['HT'].fill(dataset=dataset, ht=df['Jet_pt'][event_selection].sum().flatten(), weight=weight.weight()[event_selection])
         st = jet[jet['goodjet']==1].pt.sum() + lepton.pt.sum() + df['MET_pt']
-        output['ST'].fill(dataset=dataset, ht=st[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['ST'].fill(dataset=dataset, ht=st[event_selection].flatten(), weight=weight.weight()[event_selection])
 
         b_nonb_pair = btag.cross(light)
         jet_pair = choose(light, 2)
-        output['mbj_max'].fill(dataset=dataset, mass=b_nonb_pair[event_selection].mass.max().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
-        output['mjj_max'].fill(dataset=dataset, mass=jet_pair[event_selection].mass.max().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['mbj_max'].fill(dataset=dataset, mass=b_nonb_pair[event_selection].mass.max().flatten(), weight=weight.weight()[event_selection])
+        output['mjj_max'].fill(dataset=dataset, mass=jet_pair[event_selection].mass.max().flatten(), weight=weight.weight()[event_selection])
 
         lepton_bjet_pair = lepton.cross(btag)
-        output['mlb_max'].fill(dataset=dataset, mass=lepton_bjet_pair[event_selection].mass.max().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
-        output['mlb_min'].fill(dataset=dataset, mass=lepton_bjet_pair[event_selection].mass.min().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['mlb_max'].fill(dataset=dataset, mass=lepton_bjet_pair[event_selection].mass.max().flatten(), weight=weight.weight()[event_selection])
+        output['mlb_min'].fill(dataset=dataset, mass=lepton_bjet_pair[event_selection].mass.min().flatten(), weight=weight.weight()[event_selection])
         lepton_jet_pair = lepton.cross(jet)
-        output['mlj_max'].fill(dataset=dataset, mass=lepton_jet_pair[event_selection].mass.max().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
-        output['mlj_min'].fill(dataset=dataset, mass=lepton_jet_pair[event_selection].mass.min().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['mlj_max'].fill(dataset=dataset, mass=lepton_jet_pair[event_selection].mass.max().flatten(), weight=weight.weight()[event_selection])
+        output['mlj_min'].fill(dataset=dataset, mass=lepton_jet_pair[event_selection].mass.min().flatten(), weight=weight.weight()[event_selection])
 
         met_and_lep_pt = lepton.pt.sum() + met_pt
-        output['MET_lep_pt'].fill(dataset=dataset, pt=met_and_lep_pt[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['MET_lep_pt'].fill(dataset=dataset, pt=met_and_lep_pt[event_selection].flatten(), weight=weight.weight()[event_selection])
 
         trailing_lep = lepton[lepton.pt.argmin()] 
         leading_lep = lepton[lepton.pt.argmax()]
-        output['trailing_lep_pt'].fill(dataset=dataset, pt=trailing_lep[event_selection].pt.min().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
-        output['leading_lep_pt'].fill(dataset=dataset, pt=leading_lep[event_selection].pt.max().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['trailing_lep_pt'].fill(dataset=dataset, pt=trailing_lep[event_selection].pt.min().flatten(), weight=weight.weight()[event_selection])
+        output['leading_lep_pt'].fill(dataset=dataset, pt=leading_lep[event_selection].pt.max().flatten(), weight=weight.weight()[event_selection])
 
-        output['fw_pt'].fill(dataset=dataset, pt=fw[event_selection].pt.sum().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
-        output['fw_eta'].fill(dataset=dataset, eta=fw[event_selection].eta.sum().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['fw_pt'].fill(dataset=dataset, pt=fw[event_selection].pt.sum().flatten(), weight=weight.weight()[event_selection])
+        output['fw_eta'].fill(dataset=dataset, eta=fw[event_selection].eta.sum().flatten(), weight=weight.weight()[event_selection])
 
         R = (abs((leading_lep.eta.sum()-leading_spectator.eta.sum())**2 + (leading_lep.phi.sum()-leading_spectator.phi.sum()**2)))**0.5  #Change leading_spectator to jet ##ADD ABS()
-        output['R'].fill(dataset=dataset, multiplicity = R[event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['R'].fill(dataset=dataset, multiplicity = R[event_selection].flatten(), weight=weight.weight()[event_selection])
         OSe_cuts =  event_selection
-        output['mass_OSelectrons'].fill(dataset=dataset, mass=dielectron[event_selection].mass.sum().flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
+        output['mass_OSelectrons'].fill(dataset=dataset, mass=dielectron[event_selection].mass.sum().flatten(), weight=weight.weight()[event_selection])
         
         #closest to Z boson mass update
         OS_e = (event_selection & OSelectron)
@@ -197,8 +194,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         musort = abs(dimuon[OS_mu].mass-91.2).argsort(ascending=True).argmin()
         output['mass_Z_OSele'].fill(dataset=dataset, mass= dielectron[OS_e][elesort].mass.flatten(), weight=df['weight'][OS_e]*cfg['lumi'])
         output['mass_Z_OSmu'].fill(dataset=dataset, mass= dimuon[OS_mu][musort].mass.flatten(), weight=df['weight'][OS_mu]*cfg['lumi'])
-        output['MET_phi'].fill(dataset=dataset, eta= df["MET_phi"][event_selection].flatten(), weight=df['weight'][event_selection]*cfg['lumi'])
-
+        output['MET_phi'].fill(dataset=dataset, eta= df["MET_phi"][event_selection].flatten(), weight=weight.weight()[event_selection])
+        """
 
         return output
 
@@ -219,17 +216,17 @@ if __name__ == '__main__':
     # load the config and the cache
     cfg = loadConfig()
     
-    cacheName = 'forward'
+    cacheName = 'tW_scattering'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     histograms = sorted(list(desired_output.keys()))
     
     year = 2018
     
     fileset = {
-        #'tW_scattering': fileset_2018['tW_scattering'],
-        'topW_v2': fileset_2018['topW_v2'],
+        'tW_scattering': fileset_2018['tW_scattering'],
+        #'topW_v2': fileset_2018['topW_v2'],
         'ttbar': fileset_2018['ttbar2l'], # dilepton ttbar should be enough for this study.
-        'MuonEG': fileset_2018['MuonEG'],
+        #'MuonEG': fileset_2018['MuonEG'],
         'WW': fileset_2018['WW'],
         'WZ': fileset_2018['WZ'],
         'DY': fileset_2018['DY'],
@@ -266,7 +263,7 @@ if __name__ == '__main__':
         cache['simple_output']  = output
         cache.dump()
 
-df = getCutFlowTable(output, processes= ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ'], lines=['skim','trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])
+"""df = getCutFlowTable(output, processes= ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ'], lines=['skim','trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])
 
 #print percentage table
 percentoutput = {}
@@ -287,4 +284,4 @@ for process in ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 
 df_p = pd.DataFrame(data=percentoutput)
 df_p = df_p.reindex(['skim','trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])
 print(df)
-print(df_p)
+print(df_p)"""

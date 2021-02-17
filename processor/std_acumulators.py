@@ -45,6 +45,7 @@ desired_output = {
             "N_mu" :              hist.Hist("Counts", dataset_axis, multiplicity_axis),
             "N_jet" :             hist.Hist("Counts", dataset_axis, multiplicity_axis),
             "N_fwd" :             hist.Hist("Counts", dataset_axis, multiplicity_axis),
+	    "N_spec":             hist.Hist("Counts", dataset_axis, multiplicity_axis),
 
             "nLepFromTop" :     hist.Hist("Counts", dataset_axis, multiplicity_axis),
             "nLepFromW" :       hist.Hist("Counts", dataset_axis, multiplicity_axis),
@@ -72,5 +73,6 @@ desired_output = {
 }
 
 outputs_with_vars = ['j1', 'j2', 'j3', 'b1', 'b2', 'N_jet', 'fwd_jet', 'N_b', 'N_fwd', 'N_central', 'MET']
+outputs_with_vars += ['N_ele', 'N_mu', 'N_spec']
 for out in outputs_with_vars:
     desired_output.update( { out+'_'+var: desired_output[out].copy() for var in variations } )

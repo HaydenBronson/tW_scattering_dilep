@@ -23,8 +23,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         self.variations = variations
         self.year = year
 
-        self.btagSF = btag_scalefactor(year)
-        self.leptonSF = LeptonSF(year=year)
+        #self.btagSF = btag_scalefactor(year)
+        #self.leptonSF = LeptonSF(year=year)
 
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -57,7 +57,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         dimuon = choose(muon,2)
         SSdimuon = ak.any((dimuon['0'].charge*dimuon['1'].charge)>0, axis=1)
         OSdimuon = ak.any((dimuon['0'].charge*dimuon['1'].charge)<0, axis=1)
-        OSmuon_m = dimuon[OSmuon].mass
+        OSmuon_m = dimuon[OSdimuon].mass
 
         # Electrons
         electron = Collections(ev, "Electron", "tight").get() 
@@ -65,7 +65,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         dielectron = choose(electron, 2)
         SSdielectron = ak.any((dielectron['0'].charge*dielectron['1'].charge)>0, axis=1)
         OSdielectron = ak.any((dielectron['0'].charge*dielectron['1'].charge)<0, axis=1)
-        OSelectron_m = dielectron[OSelectron].mass
+        OSelectron_m = dielectron[OSdielectron].mass
         
         #Merge Electron and Muon
         lepton = ak.concatenate([muon, electron], axis=1)
@@ -98,8 +98,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         threeJet    = (ak.num(jet, axis = 1) >=3) # those are any two jets
         oneBTag     = (ak.num(btag, axis = 1)>0)
         met50       = (met_pt > 50)
-        offZ        = ((abs(OSdimuon.mass-91.2)>15) & (abs(OSdielectron.mass-91.2)>15))
-        hpt_fwd     = ((fw.pt > 40) & (abs(fw.eta) > 1.7) & (abs(fw.eta) < 4.7) )
+        #offZ        = ((abs(OSmuon_m-91.2)>15) & (abs(OSelectron_m-91.2)>15))
+        #hpt_fwd     = (fw.pt > 40)
 
         #A bunch of stuff without purpose but just leave it here first
         twoMuon     = (ak.num( muon, axis = 1)==2 )
@@ -120,11 +120,11 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         selection.add('threeJet',   threeJet)
         selection.add('oneBTag',    oneBTag)
         selection.add('met50',        met50)
-        selection.add('offZ',       offZ)
+        #selection.add('offZ',       offZ)
         selection.add('central2',   (ak.num(lightCentral, axis=1)>=2))
-        selection.add('pt40_fwd',   hpt_fwd)
+        #selection.add('pt40_fwd',   hpt_fwd)
 
-        trilep_sel = ['trilepveto', 'trilep', 'threeJet', 'oneBTag', 'met50', 'offZ', 'central2', 'pt40_fwd']
+        trilep_sel = ['trilepveto', 'trilep', 'threeJet', 'oneBTag', 'met50', 'central2'] #Remember to change this line too when we add offZ and pt40_fwd back
         trilep_sel_d = { sel: True for sel in trilep_sel }
         trilep_selection = selection.require(**trilep_sel_d)
         event_selection = trilep_selection
@@ -140,13 +140,13 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[trilep & met50], weight=weight.weight()[trilep & met50])
         #Properties of spectator jet
         output['N_spec'].fill(dataset=dataset, multiplicity=ak.num(spectator)[event_selection], weight=weight.weight()[event_selection])
-        output['pt_spec_max'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].pt)), weight=weight.weight()[event_selection & (ak.num(spectator, axis=1)>0)])
-        output['eta_spec_max'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].eta)), weight=weight.weight()[event_selection & (ak.num(spectator, axis=1)>0)])
+        #output['pt_spec_max'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].pt)), weight=weight.weight()[event_selection & (ak.num(spectator, axis=1)>0)])
+        #output['eta_spec_max'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].eta)), weight=weight.weight()[event_selection & (ak.num(spectator, axis=1)>0)])
 
 
         # something a bit more tricky
-        output['N_diele'].fill(dataset=dataset, multiplicity=ak.num(dielectron)[event_selection], weight=weight.weight()[event_selection])
-        output['N_dimu'].fill(dataset=dataset, multiplicity=ak.num(dimuon)[event_selection], weight=weight.weight()[event_selection])
+        #output['N_diele'].fill(dataset=dataset, multiplicity=ak.num(dielectron)[event_selection], weight=weight.weight()[event_selection])
+        #output['N_dimu'].fill(dataset=dataset, multiplicity=ak.num(dimuon)[event_selection], weight=weight.weight()[event_selection])
 
 
 

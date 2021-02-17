@@ -1,143 +1,177 @@
-
+import coffea
+import copy
 from coffea import hist
 import pandas as pd
-#import uproot_methods
+import numpy as np
+import os
 
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import numpy as np
 
-from Tools.helpers import *
 from klepto.archives import dir_archive
 
-
-def saveFig( fig, ax, rax, path, name, scale='linear', shape=False, y_max=-1 ):
-    outdir = os.path.join(path,scale)
-    finalizePlotDir(outdir)
-    ax.set_yscale(scale)
-    ax.set_ylabel('Events')
-
-    y_min = 0.0005 if shape else 0.05
-    if y_max>0:
-        y_max = 0.1 if shape else 300*y_max
-    else:
-        y_max = 3e7
-    if scale == 'log':
-        ax.set_ylim(y_min, y_max)
-        #if shape:
-        #     ax.yaxis.set_ticks(np.array([10e-4,10e-3,10e-2,10e-1,10e0]))
-        #else:
-        #    ax.yaxis.set_ticks(np.array([10e-2,10e-1,10e0,10e1,10e2,10e3,10e4,10e5,10e6]))
-    else:
-        ax.set_ylim(0.0, y_max)
-
-
-#    else:
-#        if y_max<0 and not shape:
-#            pass
-#        else:
-#            ax.set_ylim(0.000005 if shape else 0.05, 3 if shape else 300*y_max)
-
-
-    handles, labels = ax.get_legend_handles_labels()
-    new_labels = []
-    for handle, label in zip(handles, labels):
-        #print (handle, label)
-        try:
-            new_labels.append(my_labels[label])
-            if not label=='pseudodata':
-                handle.set_color(colors[label])
-        except:
-            pass
-
-    if rax:
-        plt.subplots_adjust(hspace=0)
-        rax.set_ylabel('Obs./Pred.')
-        rax.set_ylim(0.5,1.5)
-
-    ax.legend(title='',ncol=2,handles=handles, labels=new_labels, frameon=False)
-
-    fig.text(0., 0.995, '$\\bf{CMS}$', fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
-    fig.text(0.15, 1., '$\\it{Simulation}$', fontsize=14, horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
-    fig.text(0.8, 1., '13 TeV', fontsize=14, horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
-
-    fig.savefig(os.path.join(outdir, "{}.pdf".format(name)))
-    fig.savefig(os.path.join(outdir, "{}.png".format(name)))
-    #ax.clear()
-
-colors = {
-    'tW_scattering': '#FF595E',
-    'TTW': '#8AC926',
-    'TTX': '#FFCA3A',
-    'ttbar': '#1982C4',
-#    'wjets': '#6A4C93',
-    'TTZ': '#c65102',
-    'WZ': '#f36196',
-    'diboson': '#a9561e',
-    'DY': '#2ee8bb',
-}
-'''
-other colors (sets from coolers.com):
-#525B76 (gray)
-#34623F (hunter green)
-#0F7173 (Skobeloff)
-'''
-
-my_labels = {
-    'tW_scattering': 'tW scattering',
-    'TTW': r'$t\bar{t}$W+jets',
-    'TTX': r'$t\bar{t}$Z/H',
-    'ttbar': r'$t\bar{t}$+jets',
-#    'wjets': 'W+jets',
-    'TTZ': 'TTZ',
-    'WZ': 'WZ',
-    'pseudodata': 'Pseudo-data',
-    'uncertainty': 'Uncertainty',
-    'diboson': 'diboson',
-    'DY': 'Drell-Yan'
-}
-
-data_err_opts = {
-    'linestyle': 'none',
-    'marker': '.',
-    'markersize': 10.,
-    'color': 'k',
-    'elinewidth': 1,
-}
-
-error_opts = {
-    'label': 'uncertainty',
-    'hatch': '///',
-    'facecolor': 'none',
-    'edgecolor': (0,0,0,.5),
-    'linewidth': 0
-}
-
-fill_opts = {
-    'edgecolor': (0,0,0,0.3),
-    'alpha': 1.0
-}
+# import all the colors and tools for plotting
+from Tools.helpers import loadConfig
+from helpers import *
 
 # load the configuration
 cfg = loadConfig()
 
-# load the results
-cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['singleLep']), serialized=True)
-cache.load()
+year            = 2018
+separateSignal  = False
+scaleSignal     = 0
+useData         = True
+normalize       = True
 
-histograms = cache.get('histograms')
-output = cache.get('simple_output')
+if year == 2016:
+    lumi = 35.9
+elif year == 2017:
+    lumi = 41.5
+elif year == 2018:
+    lumi = 60.0
+elif year == 2019:
+    lumi = 35.9+41.5+60.0
+
+if year == 2019:
+    # load the results
+    first = True
+    for y in [2016,2017,2018]:
+        cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['singleLep']), serialized=True) #'WH_LL_%s'%year
+        cache.load()
+        tmp_output = cache.get('simple_output')
+        if first:
+            output = copy.deepcopy(tmp_output)
+        else:
+            for key in tmp_output:
+                if type(tmp_output[key]) == coffea.hist.hist_tools.Hist:
+                    output[key].add(tmp_output[key])
+        first = False
+        del cache
+else:
+    cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['singleLep']), serialized=True) #'WH_LL_%s'%year
+    cache.load()
+    output = cache.get('simple_output')
+
 plotDir = os.path.expandvars(cfg['meta']['plots']) + '/trilep_plots/'
 finalizePlotDir(plotDir)
 
-if not histograms:
-    print ("Couldn't find histograms in archive. Quitting.")
-    exit()
+print ("Plots will appear here:", plotDir )
+
+bins = {\
+    'N_spec':   {'axis': 'multiplicity',      'overflow':'over',  'bins': hist.Bin('pt', r'$grab some units$', 6, -0.5, 5.5)},
+    }
+
+import re
+notdata = re.compile('(?!(Data))')
+
+signal = re.compile('tW_scattering')#what is this signal line
+processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'WZ', 'TTX', 'DY', 'TTZ']
+
+
+notsignal = re.compile('(?!%s)'%signal)
+
+for name in bins:
+    print (name)
+    skip = False
+    histogram = output[name]
+    
+    if not name in bins.keys():
+        continue
+
+    axis = bins[name]['axis']
+    print (name, axis)
+    histogram = histogram.rebin(axis, bins[name]['bins'])
+
+    y_max = histogram.sum("dataset").values(overflow='over')[()].max()
+    y_over = histogram.sum("dataset").values(overflow='over')[()][-1]
+
+    MC_total = histogram[notdata].sum("dataset").values(overflow='over')[()].sum()
+    Data_total = histogram['Data'].sum("dataset").values(overflow='over')[()].sum()
+
+    print ("Data:", round(Data_total,0), "MC:", round(MC_total,2))
+
+    if normalize:
+        scales = { process: Data_total/MC_total for process in processes }
+        histogram.scale(scales, axis='dataset')
+    else:
+        scales = {}
+
+
+
+    if useData:
+        fig, (ax, rax) = plt.subplots(2, 1, figsize=(7,7), gridspec_kw={"height_ratios": (3, 1)}, sharex=True)
+    else:
+        fig, ax = plt.subplots(1,1,figsize=(7,7))
+
+    # get axes
+    if useData:
+        hist.plot1d(histogram[notdata], overlay="dataset", ax=ax, stack=True, overflow=bins[name]['overflow'], fill_opts=fill_opts, order=processes)
+        #hist.plot1d(histogram[notdata], overlay="dataset", ax=ax, stack=True, overflow=bins[name]['overflow'], fill_opts=fill_opts, error_opts=error_opts, order=processes)
+        #hist.plot1d(histogram['QCD'], overlay="dataset", ax=ax, stack=False, overflow=bins[name]['overflow'], clear=False, line_opts=None, fill_opts=fill_opts, error_opts=error_opts, order=processes)
+        hist.plot1d(histogram['Data'], overlay="dataset", ax=ax, overflow=bins[name]['overflow'], error_opts=data_err_opts, clear=False)
+        #hist.plot1d(histogram[signal], overlay="dataset", ax=ax, overflow=bins[name]['overflow'], line_opts={'linewidth':3}, clear=False)
+
+    if 'upHists' in bins[name]:
+        addUncertainties(ax, axis, histogram, notdata, [output[x] for x in bins[name]['upHists']], [output[x] for x in bins[name]['downHists']], overflow=bins[name]['overflow'], rebin=bins[name]['bins'], ratio=False, scales=scales)
+    else:
+        addUncertainties(ax, axis, histogram, notdata, [], [], overflow=bins[name]['overflow'], rebin=bins[name]['bins'], ratio=False, scales=scales)
+
+    if useData:
+        # build ratio
+        hist.plotratio(
+            num=histogram['Data'].sum("dataset"),
+            denom=histogram[notdata].sum("dataset"),
+            ax=rax,
+            error_opts=data_err_opts,
+            denom_fill_opts=None, # triggers this: https://github.com/CoffeaTeam/coffea/blob/master/coffea/hist/plot.py#L376
+            guide_opts={},
+            unc='num',
+            #unc=None,
+            overflow=bins[name]['overflow']
+        )
+
+        if 'upHists' in bins[name]:
+            addUncertainties(rax, axis, histogram, notdata, [output[x] for x in bins[name]['upHists']], [output[x] for x in bins[name]['downHists']], overflow=bins[name]['overflow'], rebin=bins[name]['bins'], ratio=True, scales=scales)
+        else:
+            addUncertainties(rax, axis, histogram, notdata, [], [], overflow=bins[name]['overflow'], rebin=bins[name]['bins'], ratio=True, scales=scales)
+
+
+    for l in ['linear', 'log']:
+        if useData:
+            saveFig(fig, ax, rax, plotDir, name, scale=l, shape=False, y_max=y_max, preliminary='Preliminary', lumi=lumi, normalize=(Data_total/MC_total))
+        else:
+            saveFig(fig, ax, None, plotDir, name, scale=l, shape=False, y_max=y_max)
+    fig.clear()
+    if useData:
+        rax.clear()
+    ax.clear()
+
+    if False:
+        try:
+            fig, ax = plt.subplots(1,1,figsize=(7,7))
+            notdata = re.compile('(?!pseudodata|wjets|diboson)')
+            hist.plot1d(histogram[notdata],overlay="dataset", density=True, stack=False, overflow=bins[name]['overflow'], ax=ax) # make density plots because we don't care about x-sec differences
+            for l in ['linear', 'log']:
+                saveFig(fig, ax, None, plotDir, name+'_shape', scale=l, shape=True)
+            fig.clear()
+            ax.clear()
+        except ValueError:
+            print ("Can't make shape plot for a weird reason")
+
+    fig.clear()
+    ax.clear()
+
+    plt.close('all')
+
+    #break
+
+print ()
+print ("Plots are here: http://uaf-10.t2.ucsd.edu/~%s/"%os.path.expandvars('$USER')+str(plotDir.split('public_html')[-1]) )
+
 
 '''
-SECOND ENTRY IS WHAT SHOWS UP ON GRAPH, IT USES LATEX FORMATING
-
     pt	 		hist.Bin('pt', r'$E_T^{miss} \ (GeV)$', 20, 0, 200)
     multiplicity 	hist.Bin('multiplicity', r'$N_{jet}$', 15, -0.5, 14.5)
     mass	 	hist.Bin('mass', r'$M(b, light) \ (GeV)$', 25, 0, 1500)
@@ -145,9 +179,7 @@ SECOND ENTRY IS WHAT SHOWS UP ON GRAPH, IT USES LATEX FORMATING
     phi			hist.Bin('phi', r'$phi(single b)$', 30, -5.5, 5.5)
     ht                  hist.Bin("ht",        r"$H_{T}$ (GeV)", 500, 0, 5000)
 '''
-
-print ("Plots will appear here:", plotDir )
-
+'''
 for name in histograms:
     print (name)
     skip = False
@@ -280,83 +312,6 @@ for name in histograms:
     else:
         skip = True
 
-    if not skip:
-        y_max = histogram.sum("dataset").values(overflow='over')[()].max()
-        y_over = histogram.sum("dataset").values(overflow='over')[()][-1]
-
-        # get pseudo data
-        bin_values = histogram.axis(axis).centers(overflow='over')
-        poisson_means = histogram.sum('dataset').values(overflow='over')[()]
-        values = np.repeat(bin_values, np.random.poisson(np.maximum(np.zeros(len(poisson_means)), poisson_means)))
-        if axis == 'pt':
-            histogram.fill(dataset='pseudodata', pt=values)
-        elif axis == 'mass':
-            histogram.fill(dataset='pseudodata', mass=values)
-        elif axis == 'multiplicity':
-            histogram.fill(dataset='pseudodata', multiplicity=values)
-        elif axis == 'eta':
-            histogram.fill(dataset='pseudodata', eta=values)
-        elif axis == 'phi':
-            histogram.fill(dataset='pseudodata', phi=values)
-        elif axis == 'ht':
-            histogram.fill(dataset='pseudodata', ht=values)
-
-        
-        import re
-        notdata = re.compile('(?!pseudodata)')
-
-        fig, (ax) = plt.subplots(1, 1, figsize=(7,7))#, gridspec_kw={"height_ratios": (3, 1)}, sharex=True)
-
-        # get axes
-        hist.plot1d(histogram[notdata],overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, error_opts=error_opts, order=['diboson', 'TTX', 'TTW','ttbar', 'WZ','DY', 'TTZ']) #error_opts??
-       # hist.plot1d(histogram['pseudodata'], overlay="dataset", ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
-        scales = { 'tW_scattering': 1 }
-        histogram.scale(scales, axis='dataset')
-        hist.plot1d(histogram['tW_scattering'], overlay="dataset", ax=ax, overflow='over', line_opts={'linewidth':3}, clear=False)
-        # build ratio
-       # hist.plotratio(
-       #     num=histogram['pseudodata'].sum("dataset"),
-       #     denom=histogram[notdata].sum("dataset"),
-       #     ax=rax,
-       #     error_opts=data_err_opts,
-       #     denom_fill_opts={},
-       #     guide_opts={},
-       #     unc='num',
-       #     overflow='over'
-       # )
-
-
-        for l in ['linear', 'log']:
-            saveFig(fig, ax, None, plotDir, name, scale=l, shape=False, y_max=y_max)
-        fig.clear()
-       # rax.clear()
-        #pd_ax.clear()
-        ax.clear()
-
-       # fig, ax = plt.subplots(1,1,figsize=(7,7))
-       
-#        hist.plot1d(histogram[notdata],overlay="dataset", density=True, stack=False, overflow='over', ax=ax) # make density plots because we don't care about x-sec differences
-#        for l in ['linear', 'log']:
-#            saveFig(fig, ax, None, plotDir, name+'_shape', scale=l, shape=True)
-#        fig.clear()
-#        ax.clear()
-#        plt.close()
-    try:
-        fig, ax = plt.subplots(1,1,figsize=(7,7))
-        notdata = re.compile('(?!pseudodata|diboson)')
-        hist.plot1d(histogram[notdata],overlay="dataset", density=True, stack=False, overflow='over', ax=ax) # make density plots because we don't care about x-sec differences
-        for l in ['linear', 'log']:
-            saveFig(fig, ax, None, plotDir, name+'_shape', scale=l, shape=True)
-        fig.clear()
-        ax.clear()
-    except ValueError:
-        print ("Can't make shape plot for a weird reason")
-
-    fig.clear()
-    ax.clear()
-
-    plt.close()
-
-
 df = getCutFlowTable(output, processes=['tW_scattering', 'ttbar', 'diboson', 'TTW', 'WZ', 'TTX', 'DY', 'TTZ'], lines=['skim','trilep','twoJet','oneBTag', 'met'])
+'''
 

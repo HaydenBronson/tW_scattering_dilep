@@ -88,6 +88,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         leading_spectator = spectator[ak.argmax(spectator.pt, axis=1)]
 
         #MET
+        met = ev.MET
         met_pt  = ev.MET.pt
         met_phi = ev.MET.phi
 
@@ -135,67 +136,53 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         #Number of electrons and muons
         output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(electron)[event_selection], weight=weight.weight()[event_selection])
         output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(muon)[event_selection], weight=weight.weight()[event_selection])
+        output['N_diele'].fill(dataset=dataset, multiplicity=ak.num(dielectron)[event_selection], weight=weight.weight()[event_selection])
+        output['N_dimu'].fill(dataset=dataset, multiplicity=ak.num(dimuon)[event_selection], weight=weight.weight()[event_selection])
         #Number of (b)jets with only trilep and met selection
         output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[trilep & met50], weight=weight.weight()[trilep & met50])
         output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[trilep & met50], weight=weight.weight()[trilep & met50])
         #Properties of spectator jet
         output['N_spec'].fill(dataset=dataset, multiplicity=ak.num(spectator)[event_selection], weight=weight.weight()[event_selection])
-        #output['pt_spec_max'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].pt)), weight=weight.weight()[event_selection & (ak.num(spectator, axis=1)>0)])
-        #output['eta_spec_max'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].eta)), weight=weight.weight()[event_selection & (ak.num(spectator, axis=1)>0)])
-
-
-        # something a bit more tricky
-        #output['N_diele'].fill(dataset=dataset, multiplicity=ak.num(dielectron)[event_selection], weight=weight.weight()[event_selection])
-        #output['N_dimu'].fill(dataset=dataset, multiplicity=ak.num(dimuon)[event_selection], weight=weight.weight()[event_selection])
-
-
-
-        """output['MET_pt'].fill(dataset=dataset, pt=df["MET_pt"][event_selection].flatten(), weight=weight.weight()[event_selection])
-        output['MT'].fill(dataset=dataset, pt=df["MT"][event_selection].flatten(), weight=weight.weight()[event_selection])
-
-        ht = jet[jet['goodjet']==1].pt.sum()
-        output['HT'].fill(dataset=dataset, ht=ht[event_selection].flatten(), weight=weight.weight()[event_selection])
-#        output['HT'].fill(dataset=dataset, ht=df['Jet_pt'][event_selection].sum().flatten(), weight=weight.weight()[event_selection])
-        st = jet[jet['goodjet']==1].pt.sum() + lepton.pt.sum() + df['MET_pt']
-        output['ST'].fill(dataset=dataset, ht=st[event_selection].flatten(), weight=weight.weight()[event_selection])
-
-        b_nonb_pair = btag.cross(light)
+        output['pt_spec_max'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].pt)), weight=weight.weight()[event_selection & (ak.num(spectator, axis=1)>0)])
+        output['eta_spec_max'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].eta)), weight=weight.weight()[event_selection & (ak.num(spectator, axis=1)>0)])
+        #MET_pt, HT and ST
+        output['MET_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(met[event_selection].pt)), weight=weight.weight()[event_selection])
+        ht = ak.sum(jet[event_selection].pt, axis=1)
+        st = met[event_selection].pt + ht + ak.sum(muon[event_selection].pt, axis=1) + ak.sum(electron[event_selection].pt, axis=1)
+        output['HT'].fill(dataset=dataset, ht=ak.to_numpy(ak.flatten(ht)), weight=weight.weight()[event_selection])
+        output['ST'].fill(dataset=dataset, ht=ak.to_numpy(ak.flatten(st)), weight=weight.weight()[event_selection])
+        #Crossing leptons and jets
+        b_nonb_pair = cross(btag, light)
         jet_pair = choose(light, 2)
-        output['mbj_max'].fill(dataset=dataset, mass=b_nonb_pair[event_selection].mass.max().flatten(), weight=weight.weight()[event_selection])
-        output['mjj_max'].fill(dataset=dataset, mass=jet_pair[event_selection].mass.max().flatten(), weight=weight.weight()[event_selection])
-
-        lepton_bjet_pair = lepton.cross(btag)
-        output['mlb_max'].fill(dataset=dataset, mass=lepton_bjet_pair[event_selection].mass.max().flatten(), weight=weight.weight()[event_selection])
-        output['mlb_min'].fill(dataset=dataset, mass=lepton_bjet_pair[event_selection].mass.min().flatten(), weight=weight.weight()[event_selection])
-        lepton_jet_pair = lepton.cross(jet)
-        output['mlj_max'].fill(dataset=dataset, mass=lepton_jet_pair[event_selection].mass.max().flatten(), weight=weight.weight()[event_selection])
-        output['mlj_min'].fill(dataset=dataset, mass=lepton_jet_pair[event_selection].mass.min().flatten(), weight=weight.weight()[event_selection])
-
-        met_and_lep_pt = lepton.pt.sum() + met_pt
-        output['MET_lep_pt'].fill(dataset=dataset, pt=met_and_lep_pt[event_selection].flatten(), weight=weight.weight()[event_selection])
-
-        trailing_lep = lepton[lepton.pt.argmin()] 
-        leading_lep = lepton[lepton.pt.argmax()]
-        output['trailing_lep_pt'].fill(dataset=dataset, pt=trailing_lep[event_selection].pt.min().flatten(), weight=weight.weight()[event_selection])
-        output['leading_lep_pt'].fill(dataset=dataset, pt=leading_lep[event_selection].pt.max().flatten(), weight=weight.weight()[event_selection])
-
-        output['fw_pt'].fill(dataset=dataset, pt=fw[event_selection].pt.sum().flatten(), weight=weight.weight()[event_selection])
-        output['fw_eta'].fill(dataset=dataset, eta=fw[event_selection].eta.sum().flatten(), weight=weight.weight()[event_selection])
-
-        R = (abs((leading_lep.eta.sum()-leading_spectator.eta.sum())**2 + (leading_lep.phi.sum()-leading_spectator.phi.sum()**2)))**0.5  #Change leading_spectator to jet ##ADD ABS()
-        output['R'].fill(dataset=dataset, multiplicity = R[event_selection].flatten(), weight=weight.weight()[event_selection])
-        OSe_cuts =  event_selection
-        output['mass_OSelectrons'].fill(dataset=dataset, mass=dielectron[event_selection].mass.sum().flatten(), weight=weight.weight()[event_selection])
+        lepton_bjet_pair = cross(lepton, btag)
+        lepton_jet_pair = cross(lepton, jet)
+        output['mbj_max'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.max(b_nonb_pair[event_selection].mass, axis=1))), weight=weight.weight()[event_selection])
+        output['mjj_max'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.max(jet_pair[event_selection].mass, axis=1))), weight=weight.weight()[event_selection])
+        output['mlb_max'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.max(lepton_bjet_pair[event_selection].mass, axis=1))), weight=weight.weight()[event_selection])
+        output['mlb_min'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.min(lepton_bjet_pair[event_selection].mass, axis=1))), weight=weight.weight()[event_selection])
+        output['mlj_max'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.max(lepton_jet_pair[event_selection].mass, axis=1))), weight=weight.weight()[event_selection])
+        output['mlj_min'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.min(lepton_jet_pair[event_selection].mass, axis=1))), weight=weight.weight()[event_selection])
+        met_and_lep_pt = ak.sum(lepton.pt, axis=1) + met.pt
+        output['MET_lep_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(met_and_lep_pt[event_selection])), weight=weight.weight()[event_selection])
+        trailing_lep = lepton[ak.singletons(ak.argmin(lepton.pt, axis=1))]['1']
+        leading_lep = lepton[ak.singletons(ak.argmax(lepton.pt, axis=1))]['1']
+        output['trailing_lep_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(trailing_lep[event_selection].pt)), weight=weight.weight()[event_selection])
+        output['leading_lep_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(leading_lep[event_selection].pt)), weight=weight.weight()[event_selection])
+        output['fw_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(ak.sum(fw[event_selection].pt, axis=1))), weight=weight.weight()[event_selection])
+        output['fw_eta'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(ak.sum(fw[event_selection].eta, axis=1))), weight=weight.weight()[event_selection])
+        R = (abs((ak.sum(leading_lep.eta)-ak.sum(leading_spectator.eta))**2 + (ak.sum(leading_lep.phi)-ak.sum(leading_spectator.phi)**2)))**0.5  #Change leading_spectator to jet ##ADD ABS()
+        output['R'].fill(dataset=dataset, multiplicity = ak.to_numpy(ak.flatten(R[event_selection])), weight=weight.weight()[event_selection])
+        output['mass_OSelectrons'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.sum(dielectron[event_selection].mass))), weight=weight.weight()[event_selection])
         
         #closest to Z boson mass update
-        OS_e = (event_selection & OSelectron)
-        elesort = abs(dielectron[OS_e].mass-91.2).argsort(ascending=True).argmin()
-        OS_mu = (event_selection & OSmuon)
-        musort = abs(dimuon[OS_mu].mass-91.2).argsort(ascending=True).argmin()
-        output['mass_Z_OSele'].fill(dataset=dataset, mass= dielectron[OS_e][elesort].mass.flatten(), weight=df['weight'][OS_e]*cfg['lumi'])
-        output['mass_Z_OSmu'].fill(dataset=dataset, mass= dimuon[OS_mu][musort].mass.flatten(), weight=df['weight'][OS_mu]*cfg['lumi'])
-        output['MET_phi'].fill(dataset=dataset, eta= df["MET_phi"][event_selection].flatten(), weight=weight.weight()[event_selection])
-        """
+        OS_e = (event_selection & OSdielectron)
+        elesort = ak.singletons(ak.argmin(ak.argsort(abs(dielectron[OS_e].mass-91.2), ascending=True)))
+        OS_mu = (event_selection & OSdimuon)
+        musort = ak.singletons(ak.argmin(ak.argsort(abs(dielectron[OS_mu].mass-91.2), ascending=True)))
+        output['mass_Z_OSele'].fill(dataset=dataset, mass= ak.to_numpy(ak.flatten(dielectron[OS_e][elesort].mass)), weight=weight.weight()[OS_e])
+        output['mass_Z_OSmu'].fill(dataset=dataset, mass= ak.to_numpy(ak.flatten(dimuon[OS_mu][musort].mass)), weight=weight.weight()[OS_mu])
+        output['MET_phi'].fill(dataset=dataset, eta= ak.to_numpy(ak.flatten(met[event_selection].phi)), weight=weight.weight()[event_selection])
+        
 
         return output
 
@@ -264,7 +251,6 @@ if __name__ == '__main__':
         cache.dump()
 
 """df = getCutFlowTable(output, processes= ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ'], lines=['skim','trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])
-
 #print percentage table
 percentoutput = {}
 for process in ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ']:

@@ -83,7 +83,8 @@ desired_output = {
             'mass_OSelectrons':    hist.Hist("Counts", dataset_axis, mass_axis),
             'mass_Z_OSele':    hist.Hist("Counts", dataset_axis, mass_axis),
             'mass_Z_OSmu':    hist.Hist("Counts", dataset_axis, mass_axis),
-            'MET_phi':    hist.Hist("Counts", dataset_axis, eta_axis),
+            'MET_phi':    hist.Hist("Counts", dataset_axis, phi_axis),
+            'MET_pt': hist.Hist("Counts", dataset_axis, pt_axis),
 
 
             'diboson':          processor.defaultdict_accumulator(int),

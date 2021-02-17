@@ -2,7 +2,7 @@
 '''
 import os
 
-import awkward1 as ak
+import awkward as ak
 import numpy as np
 
 def getPtEtaPhi(coll, pt_var='pt', eta_var='eta', phi_var='phi'):

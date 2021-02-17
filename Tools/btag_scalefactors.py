@@ -1,4 +1,4 @@
-import awkward1 as ak
+import awkward as ak
 import os
 
 from coffea.btag_tools import BTagScaleFactor

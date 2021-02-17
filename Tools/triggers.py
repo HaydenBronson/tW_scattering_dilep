@@ -1,5 +1,5 @@
 import numpy as np
-import awkward1 as ak
+import awkward as ak
 ## happily borrowed from https://github.com/bu-cms/bucoffea/blob/master/bucoffea/helpers/helpers.py
 
 def mask_or(ev, collection, masks):

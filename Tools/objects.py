@@ -9,7 +9,7 @@ Trigger-safe requirements for electrons missing!
 import os
 
 import numpy as np
-import awkward1 as ak
+import awkward as ak
 
 from yaml import load, dump
 try:

@@ -45,6 +45,7 @@ desired_output = {
             "N_mu" :              hist.Hist("Counts", dataset_axis, multiplicity_axis),
             "N_jet" :             hist.Hist("Counts", dataset_axis, multiplicity_axis),
             "N_fwd" :             hist.Hist("Counts", dataset_axis, multiplicity_axis),
+            "N_spec" :           hist.Hist("Counts", dataset_axis, multiplicity_axis),
 
             "nLepFromTop" :     hist.Hist("Counts", dataset_axis, multiplicity_axis),
             "nLepFromW" :       hist.Hist("Counts", dataset_axis, multiplicity_axis),
@@ -53,6 +54,37 @@ desired_output = {
             "nGenTau" :         hist.Hist("Counts", dataset_axis, multiplicity_axis),
             "nGenL" :           hist.Hist("Counts", dataset_axis, multiplicity_axis),
             "GenL" :            hist.Hist("Counts", pt_axis, multiplicity_axis),
+
+            "pt_spec_max" :          hist.Hist("Counts", dataset_axis, pt_axis),
+
+            "eta_spec_max" :          hist.Hist("Counts", dataset_axis, eta_axis),
+
+            "N_diele" :             hist.Hist("Counts", dataset_axis, multiplicity_axis),
+            "N_dimu" :             hist.Hist("Counts", dataset_axis, multiplicity_axis),
+            "MT" :          hist.Hist("Counts", dataset_axis, pt_axis),
+            "HT" :          hist.Hist("Counts", dataset_axis, ht_axis),
+            "ST" :          hist.Hist("Counts", dataset_axis, ht_axis),
+            "mbj_max" :          hist.Hist("Counts", dataset_axis, mass_axis),
+            "mjj_max" :          hist.Hist("Counts", dataset_axis, mass_axis),
+            "mlb_max" :          hist.Hist("Counts", dataset_axis, mass_axis),
+            "mlb_min" :          hist.Hist("Counts", dataset_axis, mass_axis),
+            "mlj_max" :          hist.Hist("Counts", dataset_axis, mass_axis),
+            "mlj_min" :          hist.Hist("Counts", dataset_axis, mass_axis),
+
+
+            'MET_lep_pt':   hist.Hist("Counts", dataset_axis, pt_axis), 
+            'trailing_lep_pt':  hist.Hist("Counts", dataset_axis, pt_axis),
+            'leading_lep_pt':  hist.Hist("Counts", dataset_axis, pt_axis),  
+            'fw_pt':              hist.Hist("Counts", dataset_axis, pt_axis),
+            'fw_eta':             hist.Hist("Counts", dataset_axis, eta_axis),
+            'fw_pt_total':      hist.Hist("Counts", dataset_axis, pt_axis),  
+            'fw_max_deltaeta':  hist.Hist('Counts', dataset_axis, eta_axis),
+            'R':          hist.Hist("Counts", dataset_axis, multiplicity_axis),
+            'mass_OSelectrons':    hist.Hist("Counts", dataset_axis, mass_axis),
+            'mass_Z_OSele':    hist.Hist("Counts", dataset_axis, mass_axis),
+            'mass_Z_OSmu':    hist.Hist("Counts", dataset_axis, mass_axis),
+            'MET_phi':    hist.Hist("Counts", dataset_axis, eta_axis),
+
 
             'diboson':          processor.defaultdict_accumulator(int),
             'ttbar':            processor.defaultdict_accumulator(int),
@@ -73,5 +105,8 @@ desired_output = {
 
 outputs_with_vars = ['j1', 'j2', 'j3', 'b1', 'b2', 'N_jet', 'fwd_jet', 'N_b', 'N_fwd', 'N_central', 'MET']
 outputs_with_vars += ['N_ele', 'N_mu', 'N_spec', 'pt_spec_max', 'eta_spec_max', 'N_diele', 'N_dimu']
+outputs_with_vars += ['MT', 'HT', 'ST', 'mbj_max', 'mjj_max', 'mlb_max', 'mlb_min', 'mlj_max', 'mlj_min', 'MET_lep_pt', 'trailing_lep_pt', 'leading_lep_pt', 'fw_pt', 'fw_eta', 'R', 'mass_OSelectrons', 'mass_Z_OSele', 'mass_Z_OSmu', 'MET_phi']
+
+
 for out in outputs_with_vars:
     desired_output.update( { out+'_'+var: desired_output[out].copy() for var in variations } )

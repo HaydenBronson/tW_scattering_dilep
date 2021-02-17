@@ -72,5 +72,6 @@ desired_output = {
 }
 
 outputs_with_vars = ['j1', 'j2', 'j3', 'b1', 'b2', 'N_jet', 'fwd_jet', 'N_b', 'N_fwd', 'N_central', 'MET']
+outputs_with_vars += ['N_ele', 'N_mu', 'N_spec', 'pt_spec_max', 'eta_spec_max', 'N_diele', 'N_dimu']
 for out in outputs_with_vars:
     desired_output.update( { out+'_'+var: desired_output[out].copy() for var in variations } )

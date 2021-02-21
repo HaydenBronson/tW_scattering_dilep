@@ -1,4 +1,3 @@
-###NEW COFFEA IMPORTS
 import awkward as ak
 
 from coffea import processor, hist
@@ -146,42 +145,42 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['pt_spec_max'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].pt)), weight=weight.weight()[event_selection & (ak.num(spectator, axis=1)>0)])
         output['eta_spec_max'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].eta)), weight=weight.weight()[event_selection & (ak.num(spectator, axis=1)>0)])
         #MET_pt, HT and ST
-        output['MET_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(met[event_selection].pt)), weight=weight.weight()[event_selection])
+        output['MET_pt'].fill(dataset=dataset, pt=met[event_selection].pt, weight=weight.weight()[event_selection])
         ht = ak.sum(jet[event_selection].pt, axis=1)
         st = met[event_selection].pt + ht + ak.sum(muon[event_selection].pt, axis=1) + ak.sum(electron[event_selection].pt, axis=1)
-        output['HT'].fill(dataset=dataset, ht=ak.to_numpy(ak.flatten(ht)), weight=weight.weight()[event_selection])
-        output['ST'].fill(dataset=dataset, ht=ak.to_numpy(ak.flatten(st)), weight=weight.weight()[event_selection])
+        output['HT'].fill(dataset=dataset, ht=ht, weight=weight.weight()[event_selection])
+        output['ST'].fill(dataset=dataset, ht=st, weight=weight.weight()[event_selection])
         #Crossing leptons and jets
         b_nonb_pair = cross(btag, light)
         jet_pair = choose(light, 2)
         lepton_bjet_pair = cross(lepton, btag)
         lepton_jet_pair = cross(lepton, jet)
-        output['mbj_max'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.max(b_nonb_pair[event_selection].mass, axis=1))), weight=weight.weight()[event_selection])
-        output['mjj_max'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.max(jet_pair[event_selection].mass, axis=1))), weight=weight.weight()[event_selection])
-        output['mlb_max'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.max(lepton_bjet_pair[event_selection].mass, axis=1))), weight=weight.weight()[event_selection])
-        output['mlb_min'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.min(lepton_bjet_pair[event_selection].mass, axis=1))), weight=weight.weight()[event_selection])
-        output['mlj_max'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.max(lepton_jet_pair[event_selection].mass, axis=1))), weight=weight.weight()[event_selection])
-        output['mlj_min'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.min(lepton_jet_pair[event_selection].mass, axis=1))), weight=weight.weight()[event_selection])
+        output['mbj_max'].fill(dataset=dataset, mass=ak.max(b_nonb_pair[event_selection].mass, axis=1), weight=weight.weight()[event_selection])
+        output['mjj_max'].fill(dataset=dataset, mass=ak.max(jet_pair[event_selection].mass, axis=1), weight=weight.weight()[event_selection])
+        output['mlb_max'].fill(dataset=dataset, mass=ak.max(lepton_bjet_pair[event_selection].mass, axis=1), weight=weight.weight()[event_selection])
+        output['mlb_min'].fill(dataset=dataset, mass=ak.min(lepton_bjet_pair[event_selection].mass, axis=1), weight=weight.weight()[event_selection])
+        output['mlj_max'].fill(dataset=dataset, mass=ak.max(lepton_jet_pair[event_selection].mass, axis=1), weight=weight.weight()[event_selection])
+        output['mlj_min'].fill(dataset=dataset, mass=ak.min(lepton_jet_pair[event_selection].mass, axis=1), weight=weight.weight()[event_selection])
         met_and_lep_pt = ak.sum(lepton.pt, axis=1) + met.pt
-        output['MET_lep_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(met_and_lep_pt[event_selection])), weight=weight.weight()[event_selection])
-        trailing_lep = lepton[ak.singletons(ak.argmin(lepton.pt, axis=1))]['1']
-        leading_lep = lepton[ak.singletons(ak.argmax(lepton.pt, axis=1))]['1']
+        output['MET_lep_pt'].fill(dataset=dataset, pt=met_and_lep_pt[event_selection], weight=weight.weight()[event_selection])
+        trailing_lep = lepton[ak.singletons(ak.argmin(lepton.pt, axis=1))]
+        leading_lep = lepton[ak.singletons(ak.argmax(lepton.pt, axis=1))]
         output['trailing_lep_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(trailing_lep[event_selection].pt)), weight=weight.weight()[event_selection])
         output['leading_lep_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(leading_lep[event_selection].pt)), weight=weight.weight()[event_selection])
-        output['fw_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(ak.sum(fw[event_selection].pt, axis=1))), weight=weight.weight()[event_selection])
-        output['fw_eta'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(ak.sum(fw[event_selection].eta, axis=1))), weight=weight.weight()[event_selection])
-        R = (abs((ak.sum(leading_lep.eta)-ak.sum(leading_spectator.eta))**2 + (ak.sum(leading_lep.phi)-ak.sum(leading_spectator.phi)**2)))**0.5  #Change leading_spectator to jet ##ADD ABS()
-        output['R'].fill(dataset=dataset, multiplicity = ak.to_numpy(ak.flatten(R[event_selection])), weight=weight.weight()[event_selection])
-        output['mass_OSelectrons'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(ak.sum(dielectron[event_selection].mass))), weight=weight.weight()[event_selection])
+        output['fw_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(fw[event_selection].pt, axis=1)), weight=weight.weight()[event_selection])
+        output['fw_eta'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(fw[event_selection].eta, axis=1)), weight=weight.weight()[event_selection])
+        R = (abs((ak.sum(leading_lep[event_selection].eta)-ak.sum(leading_spectator[event_selection].eta))**2 + (ak.sum(leading_lep[event_selection].phi)-ak.sum(leading_spectator[event_selection].phi)**2)))**0.5  #Change leading_spectator to jet ##ADD ABS()
+        #output['R'].fill(dataset=dataset, multiplicity = ak.to_numpy(ak.flatten(R)), weight=weight.weight()[event_selection])
+        output['mass_OSelectrons'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(dielectron[event_selection].mass)), weight=weight.weight()[event_selection])
         
         #closest to Z boson mass update
         OS_e = (event_selection & OSdielectron)
-        elesort = ak.singletons(ak.argmin(ak.argsort(abs(dielectron[OS_e].mass-91.2), ascending=True)))
+        elesort = ak.argsort(abs(dielectron[OS_e].mass-91.2), ascending=False)
         OS_mu = (event_selection & OSdimuon)
-        musort = ak.singletons(ak.argmin(ak.argsort(abs(dielectron[OS_mu].mass-91.2), ascending=True)))
+        musort = ak.argsort(abs(dielectron[OS_mu].mass-91.2), ascending=False)
         output['mass_Z_OSele'].fill(dataset=dataset, mass= ak.to_numpy(ak.flatten(dielectron[OS_e][elesort].mass)), weight=weight.weight()[OS_e])
         output['mass_Z_OSmu'].fill(dataset=dataset, mass= ak.to_numpy(ak.flatten(dimuon[OS_mu][musort].mass)), weight=weight.weight()[OS_mu])
-        output['MET_phi'].fill(dataset=dataset, eta= ak.to_numpy(ak.flatten(met[event_selection].phi)), weight=weight.weight()[event_selection])
+        output['MET_phi'].fill(dataset=dataset, phi= ak.to_numpy(met[event_selection].phi), weight=weight.weight()[event_selection])
         
 
         return output

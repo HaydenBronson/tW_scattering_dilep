@@ -98,8 +98,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         threeJet    = (ak.num(jet, axis = 1) >=3) # those are any two jets
         oneBTag     = (ak.num(btag, axis = 1)>0)
         met50       = (met_pt > 50)
-        #offZ        = ((abs(OSmuon_m-91.2)>15) & (abs(OSelectron_m-91.2)>15))
-        #hpt_fwd     = (fw.pt > 40)
+        offZ        = (ak.any(abs(dimuon.mass-91.2)>15, axis=1) & ak.any(abs(dielectron.mass-91.2)>15, axis=1))
+        hpt_fwd     = ak.any(fw.pt>40, axis=1)
 
         #A bunch of stuff without purpose but just leave it here first
         twoMuon     = (ak.num( muon, axis = 1)==2 )
@@ -120,11 +120,11 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         selection.add('threeJet',   threeJet)
         selection.add('oneBTag',    oneBTag)
         selection.add('met50',        met50)
-        #selection.add('offZ',       offZ)
+        selection.add('offZ',       offZ)
         selection.add('central2',   (ak.num(lightCentral, axis=1)>=2))
-        #selection.add('pt40_fwd',   hpt_fwd)
+        selection.add('pt40_fwd',   hpt_fwd)
 
-        trilep_sel = ['trilepveto', 'trilep', 'threeJet', 'oneBTag', 'met50', 'central2'] #Remember to change this line too when we add offZ and pt40_fwd back
+        trilep_sel = ['trilepveto', 'trilep', 'threeJet', 'oneBTag', 'met50', 'offZ', 'central2', 'pt40_fwd'] #Remember to change this line too when we add offZ and pt40_fwd back
         trilep_sel_d = { sel: True for sel in trilep_sel }
         trilep_selection = selection.require(**trilep_sel_d)
         event_selection = trilep_selection
@@ -132,6 +132,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
 
         #Filling Histograms
         weight = Weights(len(ev))
+        weight.add("weight", ev.weight*cfg['lumi'][self.year])
+        
         #Number of electrons and muons
         output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(electron)[event_selection], weight=weight.weight()[event_selection])
         output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(muon)[event_selection], weight=weight.weight()[event_selection])
@@ -142,8 +144,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[trilep & met50], weight=weight.weight()[trilep & met50])
         #Properties of spectator jet
         output['N_spec'].fill(dataset=dataset, multiplicity=ak.num(spectator)[event_selection], weight=weight.weight()[event_selection])
-        output['pt_spec_max'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].pt)), weight=weight.weight()[event_selection & (ak.num(spectator, axis=1)>0)])
-        output['eta_spec_max'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].eta)), weight=weight.weight()[event_selection & (ak.num(spectator, axis=1)>0)])
+        output['pt_spec_max'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].pt, axis=1)), weight=ak.flatten(ak.ones_like(leading_spectator[event_selection & (ak.num(spectator)>0)].pt)*weight.weight()[event_selection & (ak.num(spectator)>0)]))
+        output['eta_spec_max'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].eta, axis=1)), weight=ak.flatten(ak.ones_like(leading_spectator[event_selection & (ak.num(spectator)>0)].eta)*weight.weight()[event_selection & (ak.num(spectator)>0)]))
         #MET_pt, HT and ST
         output['MET_pt'].fill(dataset=dataset, pt=met[event_selection].pt, weight=weight.weight()[event_selection])
         ht = ak.sum(jet[event_selection].pt, axis=1)
@@ -167,21 +169,22 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         leading_lep = lepton[ak.singletons(ak.argmax(lepton.pt, axis=1))]
         output['trailing_lep_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(trailing_lep[event_selection].pt)), weight=weight.weight()[event_selection])
         output['leading_lep_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(leading_lep[event_selection].pt)), weight=weight.weight()[event_selection])
-        output['fw_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(fw[event_selection].pt, axis=1)), weight=weight.weight()[event_selection])
-        output['fw_eta'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(fw[event_selection].eta, axis=1)), weight=weight.weight()[event_selection])
+        output['fw_pt'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(fw[event_selection].pt)), weight=ak.flatten(ak.ones_like(fw[event_selection].pt)*weight.weight()[event_selection]))
+        output['fw_eta'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(fw[event_selection].eta)), weight=ak.flatten(ak.ones_like(fw[event_selection].eta)*weight.weight()[event_selection]))
         R = (abs((ak.sum(leading_lep[event_selection].eta)-ak.sum(leading_spectator[event_selection].eta))**2 + (ak.sum(leading_lep[event_selection].phi)-ak.sum(leading_spectator[event_selection].phi)**2)))**0.5  #Change leading_spectator to jet ##ADD ABS()
         #output['R'].fill(dataset=dataset, multiplicity = ak.to_numpy(ak.flatten(R)), weight=weight.weight()[event_selection])
         output['mass_OSelectrons'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(dielectron[event_selection].mass)), weight=weight.weight()[event_selection])
         
         #closest to Z boson mass update
+        """
         OS_e = (event_selection & OSdielectron)
-        elesort = ak.argsort(abs(dielectron[OS_e].mass-91.2), ascending=False)
+        elesort = ak.argmin(ak.argsort(abs(dielectron[OS_e].mass-91.2), ascending=True))
         OS_mu = (event_selection & OSdimuon)
-        musort = ak.argsort(abs(dielectron[OS_mu].mass-91.2), ascending=False)
+        musort = ak.argmin(ak.argsort(abs(dimuon[OS_mu].mass-91.2), ascending=True))
         output['mass_Z_OSele'].fill(dataset=dataset, mass= ak.to_numpy(ak.flatten(dielectron[OS_e][elesort].mass)), weight=weight.weight()[OS_e])
         output['mass_Z_OSmu'].fill(dataset=dataset, mass= ak.to_numpy(ak.flatten(dimuon[OS_mu][musort].mass)), weight=weight.weight()[OS_mu])
         output['MET_phi'].fill(dataset=dataset, phi= ak.to_numpy(met[event_selection].phi), weight=weight.weight()[event_selection])
-        
+        """
 
         return output
 

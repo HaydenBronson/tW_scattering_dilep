@@ -1,3 +1,4 @@
+import awkward as ak
 import coffea
 import copy
 from coffea import hist
@@ -61,6 +62,9 @@ print ("Plots will appear here:", plotDir )
 
 bins = {\
     'N_spec':   {'axis': 'multiplicity',      'overflow':'over',  'bins': hist.Bin('pt', r'$grab some units$', 6, -0.5, 5.5)},
+    'N_jet':            {'axis': 'multiplicity',    'overflow':'over',  'bins': hist.Bin('multiplicity', r'$N_{jet}$', 15, -0.5, 14.5)},
+    'dilepton_pt':      {'axis': 'pt',              'overflow':'over',  'bins': hist.Bin('pt', r'$p_{T}(ll)\ (GeV)$', 20, 0, 400)},
+    'dilepton_mass':    {'axis': 'mass',            'overflow':'over',  'bins': hist.Bin('mass', r'$M(ll) \ (GeV)$', 20, 0, 200)}
     }
 
 import re
@@ -97,7 +101,6 @@ for name in bins:
         histogram.scale(scales, axis='dataset')
     else:
         scales = {}
-
 
 
     if useData:
@@ -140,9 +143,11 @@ for name in bins:
 
     for l in ['linear', 'log']:
         if useData:
-            saveFig(fig, ax, rax, plotDir, name, scale=l, shape=False, y_max=y_max, preliminary='Preliminary', lumi=lumi, normalize=(Data_total/MC_total))
+            saveFig(fig, ax, rax, plotDir, name, scale=l, shape=False,y_max=y_max, preliminary='Preliminary', lumi=lumi, normalize=(Data_total/MC_total))
         else:
-            saveFig(fig, ax, None, plotDir, name, scale=l, shape=False, y_max=y_max)
+            saveFig(fig, ax, None, plotDir, name, scale=l, shape=False, y_max=y_max
+)
+    print("looking good")
     fig.clear()
     if useData:
         rax.clear()

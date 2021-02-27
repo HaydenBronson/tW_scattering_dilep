@@ -197,7 +197,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
 if __name__ == '__main__':
 
     from klepto.archives import dir_archive
-    from Tools.samples import * # fileset_2018 #, fileset_2018_small
+    from Tools.samples import fileset_2018, fileset_2018_small
     from processor.std_acumulators import *
 
     overwrite = True
@@ -210,16 +210,22 @@ if __name__ == '__main__':
     histograms = sorted(list(desired_output.keys()))
     
     year = 2018
-    
+ 
     fileset = {
-        'tW_scattering': fileset_2018['tW_scattering'],
+        'tW_scattering': fileset_2018_small['tW_scattering'],
         #'topW_v2': fileset_2018['topW_v2'],
-        'ttbar': fileset_2018['ttbar2l'], # dilepton ttbar should be enough for this study.
+        'TTW': fileset_2018_small['TTW'],
+        'TTX': fileset_2018_small['TTXnoW'],
+        'diboson': fileset_2018_small['diboson'],
+        'ttbar': fileset_2018_small['ttbar2l'], # dilepton ttbar should be enough for this study.
         #'MuonEG': fileset_2018['MuonEG'],
-        'WW': fileset_2018['WW'],
-        'WZ': fileset_2018['WZ'],
-        'DY': fileset_2018['DY'],
-    }
+        #'WW': fileset_2018['WW'],
+ 
+
+        'DY': fileset_2018_small['DY'],
+        'WZ': fileset_2018_small['WZ'],
+        'TTZ': fileset_2018_small['TTZ'],
+   }
     
     exe_args = {
         'workers': 16,
@@ -236,7 +242,7 @@ if __name__ == '__main__':
     
     else:
         print ("I'm running now")
-        
+                               
         output = processor.run_uproot_job(
             fileset,
             "Events",
@@ -245,7 +251,8 @@ if __name__ == '__main__':
             exe_args,
             chunksize=250000,
         )
-        
+       
+       
         cache['fileset']        = fileset
         cache['cfg']            = cfg
         cache['histograms']     = histograms

@@ -51,7 +51,7 @@ if year == 2019:
         first = False
         del cache
 else:
-    cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cfg['caches']['singleLep']), serialized=True) #'WH_LL_%s'%year
+    cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), 'tW_scattering'), serialized=True) #'WH_LL_%s'%year
     cache.load()
     output = cache.get('simple_output')
 
@@ -61,7 +61,7 @@ finalizePlotDir(plotDir)
 print ("Plots will appear here:", plotDir )
 
 bins = {\
-    'N_spec':   {'axis': 'multiplicity',      'overflow':'over',  'bins': hist.Bin('pt', r'$grab some units$', 6, -0.5, 5.5)},
+    'N_b':   {'axis': 'multiplicity',      'overflow':'over',  'bins': hist.Bin('pt', r'$grab some units$', 6, -0.5, 5.5)},
     'N_jet':            {'axis': 'multiplicity',    'overflow':'over',  'bins': hist.Bin('multiplicity', r'$N_{jet}$', 15, -0.5, 14.5)},
     'dilepton_pt':      {'axis': 'pt',              'overflow':'over',  'bins': hist.Bin('pt', r'$p_{T}(ll)\ (GeV)$', 20, 0, 400)},
     'dilepton_mass':    {'axis': 'mass',            'overflow':'over',  'bins': hist.Bin('mass', r'$M(ll) \ (GeV)$', 20, 0, 200)}

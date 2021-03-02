@@ -98,7 +98,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         threeJet    = (ak.num(jet, axis = 1) >=3) # those are any two jets
         oneBTag     = (ak.num(btag, axis = 1)>0)
         met50       = (met_pt > 50)
-        offZ        = (ak.any(abs(dimuon.mass-91.2)>15, axis=1) & ak.any(abs(dielectron.mass-91.2)>15, axis=1))
+        offZ        = muon[ak.all(abs(dimuon.mass-91.2)>10, axis=1) & ak.all(abs(dielectron.mass-91.2)>10, axis=1)] #should these be OS_dimuons?
         hpt_fwd     = ak.any(fw.pt>40, axis=1)
 
         #A bunch of stuff without purpose but just leave it here first
@@ -120,11 +120,11 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         selection.add('threeJet',   threeJet)
         selection.add('oneBTag',    oneBTag)
         selection.add('met50',        met50)
-        selection.add('offZ',       offZ)
+        #selection.add('offZ',       offZ)
         selection.add('central2',   (ak.num(lightCentral, axis=1)>=2))
         selection.add('pt40_fwd',   hpt_fwd)
 
-        trilep_sel = ['trilepveto', 'trilep', 'threeJet', 'oneBTag', 'met50', 'offZ', 'central2', 'pt40_fwd'] #Remember to change this line too when we add offZ and pt40_fwd back
+        trilep_sel = ['trilepveto', 'trilep', 'threeJet', 'oneBTag', 'met50', 'central2', 'pt40_fwd'] #Remember to change this line too when we add offZ and pt40_fwd back
         trilep_sel_d = { sel: True for sel in trilep_sel }
         trilep_selection = selection.require(**trilep_sel_d)
         event_selection = trilep_selection
@@ -143,7 +143,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[trilep & met50], weight=weight.weight()[trilep & met50])
         output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[trilep & met50], weight=weight.weight()[trilep & met50])
         #Properties of spectator jet
-        output['N_spec'].fill(dataset=dataset, multiplicity=ak.num(spectator)[event_selection], weight=weight.weight()[event_selection])
+        output['N_spec'].fill(dataset=dataset, multiplicity=ak.num(spectator)[trilep & met50], weight=weight.weight()[trilep & met50])
         output['pt_spec_max'].fill(dataset=dataset, pt=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].pt, axis=1)), weight=ak.flatten(ak.ones_like(leading_spectator[event_selection & (ak.num(spectator)>0)].pt)*weight.weight()[event_selection & (ak.num(spectator)>0)]))
         output['eta_spec_max'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(leading_spectator[event_selection & (ak.num(spectator)>0)].eta, axis=1)), weight=ak.flatten(ak.ones_like(leading_spectator[event_selection & (ak.num(spectator)>0)].eta)*weight.weight()[event_selection & (ak.num(spectator)>0)]))
         #MET_pt, HT and ST
@@ -173,7 +173,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['fw_eta'].fill(dataset=dataset, eta=ak.to_numpy(ak.flatten(fw[event_selection].eta)), weight=ak.flatten(ak.ones_like(fw[event_selection].eta)*weight.weight()[event_selection]))
         R = (abs((ak.sum(leading_lep[event_selection].eta)-ak.sum(leading_spectator[event_selection].eta))**2 + (ak.sum(leading_lep[event_selection].phi)-ak.sum(leading_spectator[event_selection].phi)**2)))**0.5  #Change leading_spectator to jet ##ADD ABS()
         #output['R'].fill(dataset=dataset, multiplicity = ak.to_numpy(ak.flatten(R)), weight=weight.weight()[event_selection])
-        output['mass_OSelectrons'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(dielectron[event_selection].mass)), weight=weight.weight()[event_selection])
+        #output['mass_OSelectrons'].fill(dataset=dataset, mass=ak.to_numpy(ak.flatten(dielectron[event_selection].mass)), weight=weight.weight()[event_selection])
         
         #closest to Z boson mass update
         """
@@ -212,19 +212,19 @@ if __name__ == '__main__':
     year = 2018
  
     fileset = {
-        'tW_scattering': fileset_2018_small['tW_scattering'],
+        'tW_scattering': fileset_2018_small['tW_scattering'], #our signal --->Important
         #'topW_v2': fileset_2018['topW_v2'],
-        'TTW': fileset_2018_small['TTW'],
-        'TTX': fileset_2018_small['TTXnoW'],
-        'diboson': fileset_2018_small['diboson'],
-        'ttbar': fileset_2018_small['ttbar2l'], # dilepton ttbar should be enough for this study.
+        'TTW': fileset_2018_small['TTW'],  #just the ttW background
+        #'TTX': fileset_2018_small['TTXnoW'], #has a bunch of things #tZq #WZ #ttH #ttZ #tt-idk_what_else
+        'diboson': fileset_2018_small['diboson'], #WW #WZ #ZZ
+        'ttbar': fileset_2018_small['ttbar2l'], # dilepton ttbar should be enough for this study. #Im not really sure what this has #ST_t
         #'MuonEG': fileset_2018['MuonEG'],
         #'WW': fileset_2018['WW'],
  
 
-        'DY': fileset_2018_small['DY'],
-        'WZ': fileset_2018_small['WZ'],
-        'TTZ': fileset_2018_small['TTZ'],
+        'DY': fileset_2018_small['DY'], #DY
+        #'WZ': fileset_2018_small['WZ'], #WZ
+        'TTZ': fileset_2018_small['TTZ'], #TTZ #ttZq #some other things
    }
     
     exe_args = {

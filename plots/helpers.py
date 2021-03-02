@@ -195,7 +195,7 @@ my_labels = {
     'ttbar': r'$t\bar{t}$+jets',
     'wjets': 'W+jets',
     'DY': 'Drell-Yan',
-    'diboson': 'VV/VVV',
+    'diboson': 'diboson',
     'WZ': 'WZ',
     'WW': 'WW',
     'MuonEG': 'Observed',

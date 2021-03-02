@@ -212,10 +212,10 @@ if __name__ == '__main__':
     year = 2018
  
     fileset = {
-        'tW_scattering': fileset_2018_small['tW_scattering'], #our signal --->Important
+        'tW_scattering': fileset_2018_small['topW_v2'], #our signal --->Important
         #'topW_v2': fileset_2018['topW_v2'],
         'TTW': fileset_2018_small['TTW'],  #just the ttW background
-        #'TTX': fileset_2018_small['TTXnoW'], #has a bunch of things #tZq #WZ #ttH #ttZ #tt-idk_what_else
+        'TTX': fileset_2018_small['TTXnoW'], #has a bunch of things #tZq #WZ #ttH #ttZ #tt-idk_what_else
         'diboson': fileset_2018_small['diboson'], #WW #WZ #ZZ
         'ttbar': fileset_2018_small['ttbar2l'], # dilepton ttbar should be enough for this study. #Im not really sure what this has #ST_t
         #'MuonEG': fileset_2018['MuonEG'],
@@ -224,7 +224,7 @@ if __name__ == '__main__':
 
         'DY': fileset_2018_small['DY'], #DY
         #'WZ': fileset_2018_small['WZ'], #WZ
-        'TTZ': fileset_2018_small['TTZ'], #TTZ #ttZq #some other things
+        #'TTZ': fileset_2018['TTZ'], #TTZ #ttZq #some other things
    }
     
     exe_args = {

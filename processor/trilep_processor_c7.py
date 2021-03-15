@@ -93,12 +93,13 @@ class forwardJetAnalyzer(processor.ProcessorABC):
 
 
         #Selections
+        skim        = (ak.num(lepton, axis=1)>=0)
         trilepveto  = (ak.num(vetolepton, axis=1) >=3)
         trilep      = (ak.num(lepton, axis=1) ==3)
         threeJet    = (ak.num(jet, axis = 1) >=3) # those are any two jets
         oneBTag     = (ak.num(btag, axis = 1)>0)
         met50       = (met_pt > 50)
-        offZ        = muon[ak.all(abs(dimuon.mass-91.2)>10, axis=1) & ak.all(abs(dielectron.mass-91.2)>10, axis=1)] #should these be OS_dimuons?
+        offZ        = (ak.all(abs(dimuon.mass-91.2)>15, axis=1) & ak.all(abs(dielectron.mass-91.2)>15, axis=1))
         hpt_fwd     = ak.any(fw.pt>40, axis=1)
 
         #A bunch of stuff without purpose but just leave it here first
@@ -115,12 +116,13 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         
         #Apply selections
         selection = PackedSelection()
+        selection.add('skim', skim)
         selection.add('trilepveto', trilepveto)
         selection.add('trilep',     trilep)
         selection.add('threeJet',   threeJet)
         selection.add('oneBTag',    oneBTag)
         selection.add('met50',        met50)
-        #selection.add('offZ',       offZ)
+        selection.add('offZ',       offZ)
         selection.add('central2',   (ak.num(lightCentral, axis=1)>=2))
         selection.add('pt40_fwd',   hpt_fwd)
 
@@ -258,11 +260,11 @@ if __name__ == '__main__':
         cache['histograms']     = histograms
         cache['simple_output']  = output
         cache.dump()
-
-"""df = getCutFlowTable(output, processes= ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ'], lines=['skim','trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])
+"""
+df = getCutFlowTable(output, processes= ['tW_scattering', 'TTW','TTX','diboson','ttbar','DY'], lines=['skim','trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])
 #print percentage table
 percentoutput = {}
-for process in ['tW_scattering', 'ttbar', 'diboson', 'TTW', 'TTX', 'DY', 'TTZ', 'WZ']:
+for process in ['tW_scattering', 'TTW','TTX','diboson','ttbar','DY']:
     percentoutput[process] = {'skim':0,'trilep':0, 'threeJet':0, 'oneBTag':0, 'met':0, 'offZ':0, 'central2':0, 'pt40_fwd':0}
     lastnum = output[process]['skim']
     for select in ['skim','trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd']:

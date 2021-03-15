@@ -14,6 +14,7 @@ from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.ttH_lepton_scalefactors import *
 from Tools.lepton_scalefactors import *
+from Tools.helpers import getCutFlowTable
 
 class forwardJetAnalyzer(processor.ProcessorABC):
 
@@ -126,7 +127,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         selection.add('central2',   (ak.num(lightCentral, axis=1)>=2))
         selection.add('pt40_fwd',   hpt_fwd)
 
-        trilep_sel = ['trilepveto', 'trilep', 'threeJet', 'oneBTag', 'met50', 'central2', 'pt40_fwd'] #Remember to change this line too when we add offZ and pt40_fwd back
+        trilep_sel = ['trilepveto', 'trilep', 'threeJet', 'oneBTag', 'met50','offZ', 'central2', 'pt40_fwd'] #Remember to change this line too when we add offZ and pt40_fwd back
         trilep_sel_d = { sel: True for sel in trilep_sel }
         trilep_selection = selection.require(**trilep_sel_d)
         event_selection = trilep_selection
@@ -187,6 +188,12 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['mass_Z_OSmu'].fill(dataset=dataset, mass= ak.to_numpy(ak.flatten(dimuon[OS_mu][musort].mass)), weight=weight.weight()[OS_mu])
         output['MET_phi'].fill(dataset=dataset, phi= ak.to_numpy(met[event_selection].phi), weight=weight.weight()[event_selection])
         """
+        cutflow     = Cutflow(output, ev, weight=weight)
+        cutflow_reqs_d = {}
+        for req in trilep_sel:
+            cutflow_reqs_d.update({req: True})
+            cutflow.addRow( req, selection.require(**cutflow_reqs_d) )
+
 
         return output
 
@@ -214,19 +221,19 @@ if __name__ == '__main__':
     year = 2018
  
     fileset = {
-        'tW_scattering': fileset_2018_small['topW_v2'], #our signal --->Important
+        'tW_scattering': fileset_2018['topW_v2'], #our signal --->Important
         #'topW_v2': fileset_2018['topW_v2'],
-        'TTW': fileset_2018_small['TTW'],  #just the ttW background
-        'TTX': fileset_2018_small['TTXnoW'], #has a bunch of things #tZq #WZ #ttH #ttZ #tt-idk_what_else
-        'diboson': fileset_2018_small['diboson'], #WW #WZ #ZZ
-        'ttbar': fileset_2018_small['ttbar2l'], # dilepton ttbar should be enough for this study. #Im not really sure what this has #ST_t
+        'TTW': fileset_2018['TTW'],  #just the ttW background
+        #'TTX': fileset_2018_small['TTXnoW'], #has a bunch of things #tZq #WZ #ttH #ttZ #tt-idk_what_else
+        'diboson': fileset_2018['diboson'], #WW #WZ #ZZ
+        'ttbar': fileset_2018['ttbar2l'], # dilepton ttbar should be enough for this study. #Im not really sure what this has #ST_t
         #'MuonEG': fileset_2018['MuonEG'],
         #'WW': fileset_2018['WW'],
  
 
-        'DY': fileset_2018_small['DY'], #DY
+        'DY': fileset_2018['DY'], #DY
         #'WZ': fileset_2018_small['WZ'], #WZ
-        #'TTZ': fileset_2018['TTZ'], #TTZ #ttZq #some other things
+        'TTZ': fileset_2018['TTZ'], #TTZ #ttZq #some other things
    }
     
     exe_args = {
@@ -260,8 +267,9 @@ if __name__ == '__main__':
         cache['histograms']     = histograms
         cache['simple_output']  = output
         cache.dump()
-"""
-df = getCutFlowTable(output, processes= ['tW_scattering', 'TTW','TTX','diboson','ttbar','DY'], lines=['skim','trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])
+
+df = getCutFlowTable(output, processes= ['tW_scattering', 'TTW','TTZ','diboson','ttbar','DY'], lines=['trilepveto', 'trilep', 'threeJet', 'oneBTag', 'met50','offZ', 'central2', 'pt40_fwd'])
+'''
 #print percentage table
 percentoutput = {}
 for process in ['tW_scattering', 'TTW','TTX','diboson','ttbar','DY']:
@@ -279,6 +287,6 @@ for process in ['tW_scattering', 'TTW','TTX','diboson','ttbar','DY']:
         percentoutput[process][select] = "%s +/- %s"%(round(percent,2), round(err, 2))
         lastnum = thisnum
 df_p = pd.DataFrame(data=percentoutput)
-df_p = df_p.reindex(['skim','trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])
+df_p = df_p.reindex(['skim','trilep', 'threeJet', 'oneBTag', 'met', 'offZ', 'central2', 'pt40_fwd'])'''
 print(df)
-print(df_p)"""
+#print(df_p)

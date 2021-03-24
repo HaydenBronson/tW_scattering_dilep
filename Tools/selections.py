@@ -1,7 +1,7 @@
 '''
 Maybe standard selections should go in here?
 '''
-import awkward1 as ak
+import awkward as ak
 
 from coffea.analysis_tools import Weights, PackedSelection
 from Tools.triggers import getTriggers, getFilters
@@ -129,6 +129,7 @@ class Selection:
         self.selection = PackedSelection()
 
         is_trilep  = ((ak.num(self.ele) + ak.num(self.mu))==3)
+        los_trilep = ((ak.num(self.ele) + ak.num(self.mu))==2)
         pos_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))<0)
         neg_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))>0)
         lep0pt     = ((ak.num(self.ele[(self.ele.pt>25)]) + ak.num(self.mu[(self.mu.pt>25)]))>0)
@@ -155,7 +156,7 @@ class Selection:
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)
 
         self.selection.add('lepveto',       lepveto)
-        self.selection.add('trilep',        is_trilep)
+        self.selection.add('trilep',        los_trilep)
         self.selection.add('filter',        self.filters)
         self.selection.add('trigger',       triggers)
         self.selection.add('p_T(lep0)>25',  lep0pt)

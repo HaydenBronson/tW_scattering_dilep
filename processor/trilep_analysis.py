@@ -1,4 +1,4 @@
-import awkward1 as ak
+import awkward as ak
 
 from coffea import processor, hist
 from coffea.nanoevents import NanoEventsFactory, NanoAODSchema

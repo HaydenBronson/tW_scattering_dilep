@@ -1,5 +1,5 @@
 import numpy as np
-import awkward1 as ak
+import awkward as ak
 import re
 ## happily borrowed from https://github.com/bu-cms/bucoffea/blob/master/bucoffea/helpers/helpers.py
 

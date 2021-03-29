@@ -129,7 +129,7 @@ class Selection:
         self.selection = PackedSelection()
 
         is_trilep  = ((ak.num(self.ele) + ak.num(self.mu))==3)
-        los_trilep = ((ak.num(self.ele) + ak.num(self.mu))==2)
+        #los_trilep = ((ak.num(self.ele) + ak.num(self.mu))==2)
         pos_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))<0)
         neg_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))>0)
         lep0pt     = ((ak.num(self.ele[(self.ele.pt>25)]) + ak.num(self.mu[(self.mu.pt>25)]))>0)
@@ -138,7 +138,7 @@ class Selection:
 
         dimu    = choose(self.mu, 2)
         diele   = choose(self.ele, 2)
-        dilep   = cross(self.mu, self.ele)
+        #dilep   = cross(self.mu, self.ele)
 
         OS_dimu = dimu[(dimu['0'].charge*dimu['1'].charge < 0)]
         OS_diele = diele[(diele['0'].charge*diele['1'].charge < 0)]
@@ -147,6 +147,9 @@ class Selection:
 
         lepton = ak.concatenate([self.ele, self.mu], axis=1)
         lepton_pdgId_pt_ordered = ak.fill_none(ak.pad_none(lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True), 0)
+        dilep = choose(lepton,2)
+        SS_dilep = (dilep['0'].charge*dilep['1'].charge > 0)
+        los_trilep = (ak.num(dilep)==1 & ak.all(SS_dilep, axis=1))
 
         triggers  = getTriggers(self.events,
             ak.flatten(lepton_pdgId_pt_ordered[:,0:1]),

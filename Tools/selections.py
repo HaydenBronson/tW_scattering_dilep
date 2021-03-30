@@ -132,8 +132,8 @@ class Selection:
         #los_trilep = ((ak.num(self.ele) + ak.num(self.mu))==2)
         pos_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))<0)
         neg_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))>0)
-        lep0pt     = ((ak.num(self.ele[(self.ele.pt>25)]) + ak.num(self.mu[(self.mu.pt>25)]))>0)
-        lep1pt     = ((ak.num(self.ele[(self.ele.pt>20)]) + ak.num(self.mu[(self.mu.pt>20)]))>1)
+        #lep0pt     = ((ak.num(self.ele[(self.ele.pt>25)]) + ak.num(self.mu[(self.mu.pt>25)]))>0)
+        #lep1pt     = ((ak.num(self.ele[(self.ele.pt>20)]) + ak.num(self.mu[(self.mu.pt>20)]))>1)
         lepveto    = ((ak.num(self.ele_veto) + ak.num(self.mu_veto))==3)
 
         dimu    = choose(self.mu, 2)
@@ -157,6 +157,9 @@ class Selection:
 
         ht = ak.sum(self.jet_all.pt, axis=1)
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)
+
+        lep0pt     = ((ak.num(self.ele_veto[(self.ele_veto.pt>25)]) + ak.num(self.mu_veto[(self.mu_veto.pt>25)]))>0)
+        lep1pt     = ((ak.num(self.ele_veto[(self.ele_veto.pt>20)]) + ak.num(self.mu_veto[(self.mu_veto.pt>20)]))>1)
 
         self.selection.add('lepveto',       lepveto)
         self.selection.add('trilep',        los_trilep)

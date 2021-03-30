@@ -153,8 +153,8 @@ class trilep_analysis(processor.ProcessorABC):
         output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight.weight()[BL])
         output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[BL], weight=weight.weight()[BL])
         output['N_central'].fill(dataset=dataset, multiplicity=ak.num(central)[BL], weight=weight.weight()[BL])
-        output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight.weight()[BL])
-        output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(muon)[BL], weight=weight.weight()[BL])
+        output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(vetoelectron)[BL], weight=weight.weight()[BL])
+        output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(vetomuon)[BL], weight=weight.weight()[BL])
         output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL], weight=weight.weight()[BL])
         output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight.weight()[BL])
         output['nLepFromTau'].fill(dataset=dataset, multiplicity=ev.nLepFromTau[BL], weight=weight.weight()[BL])
@@ -262,7 +262,7 @@ if __name__ == '__main__':
     cfg = loadConfig()
     '''hi hayden, you're going to forget what the cache names are. 'trilep_analysis_SS_2tight' 'trilep_analysis_3tight' 'trilep_analysis_2tight_1veto'''
   
-    cacheName = 'trilep_analysis_3tight'
+    cacheName = 'trilep_analysis_SS_2tight'
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     

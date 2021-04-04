@@ -154,7 +154,7 @@ class Selection:
         lepton_pdgId_pt_ordered = ak.fill_none(ak.pad_none(lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True), 0)
         dilep = choose(lepton,2)
         SS_dilep = (dilep['0'].charge*dilep['1'].charge > 0)
-        #los_trilep = (ak.num(dilep)==1 & ak.all(SS_dilep, axis=1))
+        los_trilep_SS = (ak.num(dilep)==1 & ak.all(SS_dilep, axis=1))
 
         triggers  = getTriggers(self.events,
             ak.flatten(lepton_pdgId_pt_ordered[:,0:1]),
@@ -167,7 +167,7 @@ class Selection:
         lep1pt     = ((ak.num(self.ele_veto[(self.ele_veto.pt>20)]) + ak.num(self.mu_veto[(self.mu_veto.pt>20)]))>1)
 
         self.selection.add('lepveto',       lepveto)
-        self.selection.add('trilep',        los_trilep)
+        self.selection.add('trilep',        los_trilep_SS)
         self.selection.add('filter',        self.filters)
         self.selection.add('trigger',       triggers)
         self.selection.add('p_T(lep0)>25',  lep0pt)

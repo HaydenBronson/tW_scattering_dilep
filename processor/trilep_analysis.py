@@ -100,8 +100,8 @@ class trilep_analysis(processor.ProcessorABC):
         
         jf          = cross(j_fwd, jet)
         mjf         = (jf['0']+jf['1']).mass
-        j_fwd2      = jf[ak.singletons(ak.argmax(mjf, axis=1))]['1'] # this is the jet that forms the largest invariant mass with j_fwd
-        delta_eta   = abs(j_fwd2.eta - j_fwd.eta)
+#        j_fwd2      = jf[ak.singletons(ak.argmax(mjf, axis=1))]['1'] # this is the jet that forms the largest invariant mass with j_fwd
+#        delta_eta   = abs(j_fwd2.eta - j_fwd.eta)
 
         ## MET -> can switch to puppi MET
         met_pt  = ev.MET.pt
@@ -262,7 +262,7 @@ if __name__ == '__main__':
     cfg = loadConfig()
     '''hi hayden, you're going to forget what the cache names are. 'trilep_analysis_SS_2tight' 'trilep_analysis_3tight' 'trilep_analysis_2tight_1veto'''
   
-    cacheName = 'trilep_analysis_SS_2tight'
+    cacheName = 'trilep_analysis_2tight_1veto'
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     

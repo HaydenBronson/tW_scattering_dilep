@@ -1,15 +1,15 @@
 '''
 Standardized object selection, based on SS(++) analysis
-Trigger-safe requirements for electrons missing!
-'''
-'''
-Standardized object selection, based on SS(++) analysis
-Trigger-safe requirements for electrons missing!
 '''
 import os
 
+import copy
 import numpy as np
-import awkward as ak
+try:
+    import awkward1 as ak
+except ImportError:
+    import awkward as ak
+
 
 from yaml import load, dump
 try:
@@ -29,6 +29,10 @@ def delta_r2(first, second):
     
 def delta_r(first, second):
     return np.sqrt(delta_r2(first, second))
+
+def delta_r_v2(first, second):
+    combs = ak.cartesian([first, second], nested=True)
+    return np.sqrt(delta_r2(combs['0'], combs['1']))
 
 def match(first, second, deltaRCut=0.4):
     drCut2 = deltaRCut**2
@@ -54,6 +58,19 @@ def cross(first, second):
     combs['1'] = tmp['1']
     return combs
 
+def getNonPromptFromMatch(obj):
+    return ak.num(obj[obj.genPartIdx<0])
+
+def getNonPromptFromFlavour(obj, allow_tau=True):
+    # gamma* -> ll is always treated as prompt in NanoAOD
+    if allow_tau:
+        return ak.num(obj[((obj.genPartFlav!=1) & (obj.genPartFlav!=15))]) # this treats tau->enu / tau->munu as prompt
+    else:
+        return ak.num(obj[(obj.genPartFlav!=1)])
+
+def getChargeFlips(obj, gen=0):
+    # gen is not needed, but keep to not break things
+    return ak.num(obj[(obj.matched_gen.pdgId/abs(obj.matched_gen.pdgId) != obj.pdgId/abs(obj.pdgId))])
 
 with open(os.path.expandvars('$TWHOME/data/objects.yaml')) as f:
     obj_def = load(f, Loader=Loader)
@@ -72,37 +89,109 @@ class Collections:
         #self.year = df['year'][0] ## to be implemented in next verison of babies
         self.year = 2018
         
-        
         if self.obj == "Muon":
             # collections are already there, so we just need to calculate missing ones
+            ev['Muon', 'absMiniIso'] = ev.Muon.miniPFRelIso_all*ev.Muon.pt
+            ev['Muon', 'ptErrRel']   = ev.Muon.ptErr/ev.Muon.pt
+
+            # this is what we are using:
+            # - jetRelIso if the matched jet is within deltaR<0.4, pfRelIso03_all otherwise
+            # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
+            # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
+
+            mask_close = (ak.fill_none(ev.Muon.delta_r(ev.Muon.matched_jet),99)<0.4)*1
+            mask_far = ~(ak.fill_none(ev.Muon.delta_r(ev.Muon.matched_jet),99)<0.4)*1
+
+            deepJet = ak.fill_none(ev.Muon.matched_jet.btagDeepFlavB, 0)*mask_close
+            jetRelIsoV2 = ev.Muon.jetRelIso*mask_close + ev.Muon.pfRelIso03_all*mask_far  # default to 0 if no match
+            conePt = 0.9 * ak.fill_none(ev.Muon.matched_jet.pt,0) * mask_close + ev.Muon.pt*(1 + ev.Muon.miniPFRelIso_all)*mask_far
+
+            ev['Muon', 'deepJet'] = ak.copy(deepJet)
+            ev['Muon', 'jetRelIsoV2'] = jetRelIsoV2
+            ev['Muon', 'conePt'] = conePt
+
             self.cand = ev.Muon
-            self.cand.ptErrRel      = ev.Muon.ptErr/ev.Muon.pt
-            self.cand.absMiniIso    = ev.Muon.miniPFRelIso_all*ev.Muon.pt
-            self.cand.deepJet       = ev.Jet[ev.Muon.jetIdx].btagDeepFlavB
             
         elif self.obj == "Electron":
+            # calculate new variables. asignment is awkward, but what can you do.
+            ev['Electron', 'absMiniIso'] = ev.Electron.miniPFRelIso_all*ev.Electron.pt
+            ev['Electron', 'etaSC'] = ev.Electron.eta + ev.Electron.deltaEtaSC
+
+            # the following line is only needed if we do our own matching.
+            # right now, we keep using the NanoAOD match, but check the deltaR distance
+            # jet_index, mask_match, mask_nomatch = self.matchJets(ev.Electron, ev.Jet)
+
+            # this is what we are using:
+            # - jetRelIso if the matched jet is within deltaR<0.4, pfRelIso03_all otherwise
+            # - btagDeepFlavB discriminator of the matched jet if jet is within deltaR<0.4, 0 otherwise
+            # - pt_cone = 0.9*pt of matched jet if jet is within deltaR<0.4, pt/(pt+iso) otherwise
+
+            mask_close = (ak.fill_none(ev.Electron.delta_r(ev.Electron.matched_jet),99)<0.4)*1
+            mask_far = ~(ak.fill_none(ev.Electron.delta_r(ev.Electron.matched_jet),99)<0.4)*1
+
+            deepJet = ak.fill_none(ev.Electron.matched_jet.btagDeepFlavB, 0)*mask_close
+            jetRelIsoV2 = ev.Electron.jetRelIso*mask_close + ev.Electron.pfRelIso03_all*mask_far  # default to 0 if no match
+            conePt = 0.9 * ak.fill_none(ev.Electron.matched_jet.pt,0) * mask_close + ev.Electron.pt*(1 + ev.Electron.miniPFRelIso_all)*mask_far
+
+            ev['Electron', 'deepJet'] = ak.copy(deepJet)
+            ev['Electron', 'jetRelIsoV2'] = jetRelIsoV2
+            ev['Electron', 'conePt'] = conePt
+            
             self.cand = ev.Electron
-            self.cand.absMiniIso    = ev.Electron.miniPFRelIso_all*ev.Electron.pt
-            self.cand.etaSC         = ev.Electron.eta + ev.Electron.deltaEtaSC # verify this
-            self.cand.deepJet       = ev.Jet[ev.Electron.jetIdx].btagDeepFlavB
             
         self.getSelection()
         
         if self.obj == "Electron" and self.wp == "tight":
             self.selection = self.selection & self.getElectronMVAID() & self.getIsolation(0.07, 0.78, 8.0) & self.isTriggerSafeNoIso()
+            if self.v>0: print (" - custom ID and multi-isolation")
+
         if self.obj == "Muon" and self.wp == "tight":
             self.selection = self.selection & self.getIsolation(0.11, 0.74, 6.8)
-        if self.obj == "Electron" and self.wp == "tightTTH":
+            if self.v>0: print (" - custom multi-isolation")
+            #self.selection = self.selection & ak.fill_none(ev.Muon.matched_jet.btagDeepFlavB<0.2770, True)
+            #self.selection = self.selection & (ev.Muon.matched_jet.btagDeepFlavB<0.2770)
+            #if self.v>0: print (" - deepJet")
+
+        if self.obj == "Electron" and (self.wp == "tightTTH" or self.wp == 'fakeableTTH' or self.wp == "tightSSTTH" or self.wp == 'fakeableSSTTH'):
             self.selection = self.selection & self.getSigmaIEtaIEta()
+            if self.v>0: print (" - SigmaIEtaIEta")
+            #self.selection = self.selection & ak.fill_none(ev.Electron.matched_jet.btagDeepFlavB<0.2770, True)
+            #self.selection = self.selection & (ev.Electron.matched_jet.btagDeepFlavB<0.2770)
+            #self.selection = self.selection & (ev.Jet[ev.Electron.jetIdx].btagDeepFlavB<0.2770)
+            #if self.v>0: print (" - deepJet")
+
+        if self.obj == 'Muon' and (self.wp == 'fakeableTTH' or self.wp == 'fakeableSSTTH'):
+            self.selection = self.selection & (self.cand.deepJet < self.getThreshold(self.cand.conePt, min_pt=20, max_pt=45, low=0.2770, high=0.0494))
+            if self.v>0: print (" - interpolated deepJet")
         
     def getValue(self, var):
         #return np.nan_to_num(getattr(self.cand, var), -999)
         return getattr(self.cand, var)
+
+    def matchJets(self, obj, jet, deltaRCut=0.4):
+
+        combs = ak.cartesian([obj, jet], nested=True)
+
+        jet_index = ak.local_index(delta_r(combs['0'], combs['1']))[delta_r(combs['0'], combs['1'])<0.4]
+        jet_index_pad = ak.flatten(
+                        ak.fill_none(
+                            ak.pad_none(jet_index, target=1, clip=True, axis=2),
+                        0),
+                    axis=2)
+
+        mask = ak.num(jet_index, axis=2)>0  # a mask for obj with a matched jet
+        mask_match = mask*1 + ~mask*0
+        mask_nomatch = mask*0 + ~mask*1
+
+        return jet_index_pad, mask_match, mask_nomatch
+
     
     def getSelection(self):
         self.selection = (self.cand.pt>0)
         if self.wp == None: return
-        if self.v>0: print ("## %s selection for WP %s ##"%(self.obj, self.wp))
+        if self.v>0:
+            print ()
+            print ("## %s selection for WP %s ##"%(self.obj, self.wp))
         for var in obj_def[self.obj][self.wp].keys():
             #print (var)
             if type(obj_def[self.obj][self.wp][var]) == type(1):
@@ -153,11 +242,10 @@ class Collections:
                     except:
                         pass
                     
-        if self.v>0: print ()
                     
     def get(self):
-        return self.cand[self.selection] # unfortunately, we loose information like etaSC in this step... :(
-        #return selection
+        if self.v>0: print ("Found %s objects passing the selection"%sum(ak.num(self.cand[self.selection])))
+        return self.cand[self.selection]
 
     def getSigmaIEtaIEta(self):
         return ((abs(self.cand.etaSC)<=1.479) & (self.cand.sieie<0.011)) | ((abs(self.cand.etaSC)>1.479) & (self.cand.sieie<0.030))
@@ -206,195 +294,11 @@ class Collections:
         jetRelIso = 1/(self.cand.jetRelIso+1)
         if self.v>0: print (" - custom multi isolation")
         return ( (self.cand.miniPFRelIso_all < mini) & ( (jetRelIso>jet) | (self.cand.jetPtRelv2>jetv2) ) )
-       
-'''
-import uproot
-import awkward
-import numpy as np
-from uproot_methods import TLorentzVectorArray
 
-from coffea.processor import LazyDataFrame
-from coffea.analysis_objects import JaggedCandidateArray
-
-from yaml import load, dump
-try:
-    from yaml import CLoader as Loader, CDumper as Dumper
-except ImportError:
-    from yaml import Loader, Dumper
-
-
-with open('data/objects.yaml') as f:
-    obj_def = load(f, Loader=Loader)
-
-class Collections:
-    def __init__(self, df, obj, wp, verbose=0):
-        self.obj = obj
-        self.wp = wp
-        if self.wp == None:
-            self.selection_dict = {}
-        else:
-            self.selection_dict = obj_def[self.obj][self.wp]
-
-        self.v = verbose
-        #self.year = df['year'][0] ## to be implemented in next verison of babies
-        self.year = 2018
-        
-        if self.obj == "Muon":
-            self.cand = JaggedCandidateArray.candidatesfromcounts(
-                df['nMuon'],
-                pt               = df['Muon_pt'].content,
-                eta              = df['Muon_eta'].content,
-                phi              = df['Muon_phi'].content,
-                mass             = df['Muon_mass'].content,
-                pdgId            = df['Muon_pdgId'].content, 
-                charge           = (df['Muon_pdgId']/abs(df['Muon_pdgId'])).content, #NanoAOD charge might be bullshit?
-                mediumId         = df['Muon_mediumId'].content,
-                looseId          = df['Muon_looseId'].content,
-                dxy              = df['Muon_dxy'].content,
-                dz               = df['Muon_dz'].content,
-                sip3d            = df['Muon_sip3d'].content,
-                miniPFRelIso_all = df['Muon_miniPFRelIso_all'].content,
-                ptErrRel         = (df['Muon_ptErr']/df['Muon_pt']).content,
-                mvaTTH           = df['Muon_mvaTTH'].content,
-                genPartIdx       = df['Muon_genPartIdx'].content,
-                jetRelIso        = df['Muon_jetRelIso'].content,
-                jetPtRelv2       = df['Muon_jetPtRelv2'].content,
-            )
-        
-        elif self.obj == "Electron":
-            self.cand = JaggedCandidateArray.candidatesfromcounts(
-                df['nElectron'],
-                pt               = df['Electron_pt'].content,
-                eta              = df['Electron_eta'].content,
-                phi              = df['Electron_phi'].content,
-                mass             = df['Electron_mass'].content,
-                pdgId            = df['Electron_pdgId'].content,
-                charge           = (df['Electron_pdgId']/abs(df['Electron_pdgId'])).content, #NanoAOD charge might be bullshit?
-                dxy              = df['Electron_dxy'].content,
-                dz               = df['Electron_dz'].content,
-                sip3d            = df['Electron_sip3d'].content,
-                miniPFRelIso_all = df['Electron_miniPFRelIso_all'].content,
-                mvaFall17V2noIso = df['Electron_mvaFall17V2noIso'].content,
-                mvaTTH           = df['Electron_mvaTTH'].content,
-                genPartIdx       = df['Electron_genPartIdx'].content,
-                etaSC            = (df['Electron_eta'] + df['Electron_deltaEtaSC']).content, # verify this
-                jetRelIso        = df['Electron_jetRelIso'].content,
-                jetPtRelv2       = df['Electron_jetPtRelv2'].content,
-                convVeto         = df['Electron_convVeto'].content,
-                lostHits         = df['Electron_lostHits'].content,
-                tightCharge      = df['Electron_tightCharge'].content,
-            )
-            
-        self.getSelection()
-        
-        if self.obj == "Electron" and self.wp == "tight":
-            self.selection = self.selection & self.getElectronMVAID() & self.getIsolation(0.07, 0.78, 8.0)
-        if self.obj == "Muon" and self.wp == "tight":
-            self.selection = self.selection & self.getIsolation(0.11, 0.74, 6.8)
-        
-    def getValue(self, var):
-        #return np.nan_to_num(getattr(self.cand, var), -999)
-        return getattr(self.cand, var)
-    
-    def getSelection(self):
-        self.selection = (self.cand.pt>0)
-        if self.wp == None: return
-        if self.v>0: print ("## %s selection for WP %s ##"%(self.obj, self.wp))
-        for var in obj_def[self.obj][self.wp].keys():
-            #print (var)
-            if type(obj_def[self.obj][self.wp][var]) == type(1):
-                if self.v>0: print (" - %s == %s"%(var, obj_def[self.obj][self.wp][var]))
-                self.selection = self.selection & ( self.getValue(var) == obj_def[self.obj][self.wp][var])
-            else:
-                extra = obj_def[self.obj][self.wp][var].get('extra')
-                if extra=='abs':
-                    try:
-                        self.selection = self.selection & (abs(self.getValue(var)) >= obj_def[self.obj][self.wp][var][self.year]['min'])
-                        if self.v>0: print (" - abs(%s) >= %s"%(var, obj_def[self.obj][self.wp][var][self.year]['min']))
-                    except:
-                        pass
-                    try:
-                        self.selection = self.selection & (abs(self.getValue(var)) >= obj_def[self.obj][self.wp][var]['min'])
-                        if self.v>0: print (" - abs(%s) >= %s"%(var, obj_def[self.obj][self.wp][var]['min']))
-                    except:
-                        pass
-                    try:
-                        self.selection = self.selection & (abs(self.getValue(var)) <= obj_def[self.obj][self.wp][var][self.year]['max'])
-                        if self.v>0: print (" - abs(%s) <= %s"%(var, obj_def[self.obj][self.wp][var][self.year]['max']))
-                    except:
-                        pass
-                    try:
-                        self.selection = self.selection & (abs(self.getValue(var)) <= obj_def[self.obj][self.wp][var]['max'])
-                        if self.v>0: print (" - abs(%s) <= %s"%(var, obj_def[self.obj][self.wp][var]['max']))
-                    except:
-                        pass
-                else:
-                    try:
-                        self.selection = self.selection & (self.getValue(var) >= obj_def[self.obj][self.wp][var][self.year]['min'])
-                        if self.v>0: print (" - %s >= %s"%(var, obj_def[self.obj][self.wp][var][self.year]['min']))
-                    except:
-                        pass
-                    try:
-                        self.selection = self.selection & (self.getValue(var) >= obj_def[self.obj][self.wp][var]['min'])
-                        if self.v>0: print (" - %s >= %s"%(var, obj_def[self.obj][self.wp][var]['min']))
-                    except:
-                        pass
-                    try:
-                        self.selection = self.selection & (self.getValue(var) <= obj_def[self.obj][self.wp][var][self.year]['max'])
-                        if self.v>0: print (" - %s <= %s"%(var, obj_def[self.obj][self.wp][var][self.year]['max']))
-                    except:
-                        pass
-                    try:
-                        self.selection = self.selection & (self.getValue(var) <= obj_def[self.obj][self.wp][var]['max'])
-                        if self.v>0: print (" - %s <= %s"%(var, obj_def[self.obj][self.wp][var]['max']))
-                    except:
-                        pass
-                    
-        if self.v>0: print ()
-                    
-    def get(self):
-        return self.cand[self.selection]
-        #return selection
-        
-    def getCuts(self, etaSC, pt):
-        if etaSC<0.8: return 2.597
-        
-    def getMVAscore(self):
-        MVA = np.minimum(np.maximum(self.cand.mvaFall17V2noIso, -1.0 + 1.e-6), 1.0 - 1.e-6)
-        return -0.5*np.log(2/(MVA+1)-1)
-    
-    ## some more involved cuts from SS analysis
-    def getElectronMVAID(self):
-        # this should be year specific, only 2018 for now
-        lowEtaCuts  = 2.597, 4.277, 2.597
-        midEtaCuts  = 2.252, 3.152, 2.252
-        highEtaCuts = 1.054, 2.359, 1.054
-        lowEta      = ( abs(self.cand.etaSC) < 0.8 )
-        midEta      = ( (abs(self.cand.etaSC) <= 1.479) & (abs(self.cand.etaSC) >= 0.8) )
-        highEta     = ( abs(self.cand.etaSC) > 1.479 )
-        lowPt       = ( self.cand.pt < 10 )
-        midPt       = ( (self.cand.pt <= 25) & (self.cand.pt >= 10) )
-        highPt      = (self.cand.pt > 25)
-        
-        MVA = self.getMVAscore()
-        
-        ll = ( lowEta & lowPt & (MVA > lowEtaCuts[2] ) )
-        lm = ( lowEta & midPt & (MVA > (lowEtaCuts[0]+(lowEtaCuts[1]-lowEtaCuts[0])/15*(self.cand.pt-10)) ) )
-        lh = ( lowEta & highPt & (MVA > lowEtaCuts[1] ) )
-
-        ml = ( midEta & lowPt & (MVA > midEtaCuts[2] ) )
-        mm = ( midEta & midPt & (MVA > (midEtaCuts[0]+(midEtaCuts[1]-midEtaCuts[0])/15*(self.cand.pt-10)) ) )
-        mh = ( midEta & highPt & (MVA > midEtaCuts[1] ) )
-
-        hl = ( highEta & lowPt & (MVA > highEtaCuts[2] ) )
-        hm = ( highEta & midPt & (MVA > (highEtaCuts[0]+(highEtaCuts[1]-highEtaCuts[0])/15*(self.cand.pt-10)) ) )
-        hh = ( highEta & highPt & (MVA > highEtaCuts[1] ) )
-        
-        return ( ll | lm | lh | ml | mm | mh | hl | hm | hh )
-    
-    ## SS isolation
-    def getIsolation(self, mini, jet, jetv2 ):
-        # again, this is only for 2018 so far
-        jetRelIso = 1/(self.cand.jetRelIso+1)
-        return ( (self.cand.miniPFRelIso_all < mini) & ( (jetRelIso>jet) | (self.cand.jetPtRelv2>jetv2) ) )
-       ''' 
+    def getThreshold(self, pt, min_pt=20, max_pt=45, low=0.2770, high=0.0494):
+        '''
+        get the deepJet threshold for ttH FO muons. default values are for 2018.
+        '''
+        k = (low-high)/(min_pt-max_pt)
+        d = low - k*min_pt
+        return (pt<min_pt)*low + ((pt>=min_pt)*(pt<max_pt)*(k*pt+d)) + (pt>=max_pt)*high

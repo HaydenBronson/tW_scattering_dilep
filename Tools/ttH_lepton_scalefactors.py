@@ -1,5 +1,9 @@
 import os
-import awkward as ak
+try:
+    import awkward1 as ak
+except ImportError:
+    import awkward as ak
+
 from coffea.lookup_tools import extractor
 
 class LeptonSF:
@@ -12,13 +16,13 @@ class LeptonSF:
         ele_2016_tight      = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_ele_2016_2lss/passttH/egammaEffi.txt_EGM2D.root")
         ele_2016_reco       = os.path.expandvars("$TWHOME/data/leptons/2016_EGM2D_BtoH_GT20GeV_RecoSF_Legacy2016.root")
         ele_2016_reco_low   = os.path.expandvars("$TWHOME/data/leptons/2016_EGM2D_BtoH_low_RecoSF_Legacy2016.root")
-
+        
         ele_2017_loose      = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_ele_2017.root")
         ele_2017_looseTTH   = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loosettH_ele_2017.root")
         ele_2017_tight      = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_ele_2017_2lss/passttH/egammaEffi.txt_EGM2D.root")
         ele_2017_reco       = os.path.expandvars("$TWHOME/data/leptons/2017_egammaEffi_txt_EGM2D_runBCDEF_passingRECO.root")
         ele_2017_reco_low   = os.path.expandvars("$TWHOME/data/leptons/2017_egammaEffi_txt_EGM2D_runBCDEF_passingRECO_lowEt.root")
-
+        
         ele_2018_loose      = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_ele_2018.root")
         ele_2018_looseTTH   = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loosettH_ele_2018.root")
         ele_2018_tight      = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_ele_2018_2lss/passttH/egammaEffi.txt_EGM2D.root")
@@ -34,23 +38,23 @@ class LeptonSF:
         muon_2018_loose = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_loose_muon_2018.root")
         muon_2018_tight = os.path.expandvars("$TWHOME/data/leptons/ttH/TnP_ttH_muon_2018_2lss/passttH/egammaEffi.txt_EGM2D.root")
 
-
+        
         self.ext = extractor()
         # several histograms can be imported at once using wildcards (*)
         if self.year == 2016:
             self.ext.add_weight_sets(["mu_2016_loose EGamma_SF2D %s"%muon_2016_loose])
             self.ext.add_weight_sets(["mu_2016_tight EGamma_SF2D %s"%muon_2016_tight])
-
+       
             self.ext.add_weight_sets(["ele_2016_reco EGamma_SF2D %s"%ele_2016_reco])
             self.ext.add_weight_sets(["ele_2016_reco_low EGamma_SF2D %s"%ele_2016_reco_low])
             self.ext.add_weight_sets(["ele_2016_loose EGamma_SF2D %s"%ele_2016_loose])
             self.ext.add_weight_sets(["ele_2016_looseTTH EGamma_SF2D %s"%ele_2016_looseTTH])
             self.ext.add_weight_sets(["ele_2016_tight EGamma_SF2D %s"%ele_2016_tight])
-
+        
         elif self.year == 2017:
             self.ext.add_weight_sets(["mu_2017_loose EGamma_SF2D %s"%muon_2017_loose])
             self.ext.add_weight_sets(["mu_2017_tight EGamma_SF2D %s"%muon_2017_tight])
-
+       
             self.ext.add_weight_sets(["ele_2017_reco EGamma_SF2D %s"%ele_2017_reco])
             self.ext.add_weight_sets(["ele_2017_reco_low EGamma_SF2D %s"%ele_2017_reco_low])
             self.ext.add_weight_sets(["ele_2017_loose EGamma_SF2D %s"%ele_2017_loose])
@@ -60,19 +64,19 @@ class LeptonSF:
         elif self.year == 2018:
             self.ext.add_weight_sets(["mu_2018_loose EGamma_SF2D %s"%muon_2018_loose])
             self.ext.add_weight_sets(["mu_2018_tight EGamma_SF2D %s"%muon_2018_tight])
-
+       
             self.ext.add_weight_sets(["ele_2018_reco EGamma_SF2D %s"%ele_2018_reco])
             self.ext.add_weight_sets(["ele_2018_loose EGamma_SF2D %s"%ele_2018_loose])
             self.ext.add_weight_sets(["ele_2018_looseTTH EGamma_SF2D %s"%ele_2018_looseTTH])
             self.ext.add_weight_sets(["ele_2018_tight EGamma_SF2D %s"%ele_2018_tight])
-
-
+        
+        
         self.ext.finalize()
-
+        
         self.evaluator = self.ext.make_evaluator()
 
     def get(self, ele, mu):
-
+        
         if self.year == 2016:
             ele_sf_reco     = self.evaluator["ele_2016_reco"](ele[ele.pt>20].eta, ele[ele.pt>20].pt)
             ele_sf_reco_low = self.evaluator["ele_2016_reco_low"](ele[ele.pt<=20].eta, ele[ele.pt<=20].pt)
@@ -114,14 +118,14 @@ class LeptonSF:
     def values(self):
 
         return 0
-
+        
 
 
 if __name__ == '__main__':
     sf16 = LeptonSF(year=2016)
     sf17 = LeptonSF(year=2017)
     sf18 = LeptonSF(year=2018)
-
+    
     print("Evaluators found for 2016:")
     for key in sf16.evaluator.keys():
         print("%s:"%key, sf16.evaluator[key])

@@ -13,6 +13,9 @@ from Tools.config_helpers import loadConfig, make_small
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
 #from Tools.lepton_scalefactors import *
+from Tools.ttH_lepton_scalefactors import *
+from Tools.selections import Selection
+
 from Tools.selections import Selection
 
 class trilep_analysis(processor.ProcessorABC):
@@ -21,7 +24,7 @@ class trilep_analysis(processor.ProcessorABC):
         self.year = year
         
         self.btagSF = btag_scalefactor(year)
-        
+        #self.leptonSF = LeptonSF(year=year)        
         #self.leptonSF = LeptonSF(year=year)
         
         self._accumulator = processor.dict_accumulator( accumulator )
@@ -114,10 +117,9 @@ class trilep_analysis(processor.ProcessorABC):
         # define the weight
         weight = Weights( len(ev) )
         
-        if not dataset=='MuonEG':
+        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
             # lumi weight
             weight.add("weight", ev.weight*cfg['lumi'][self.year])
-            #weight.add("weight", ev.genWeight*cfg['lumi'][self.year]*mult)
             
             # PU weight - not in the babies...
             weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
@@ -125,8 +127,8 @@ class trilep_analysis(processor.ProcessorABC):
             # b-tag SFs
             weight.add("btag", self.btagSF.Method1a(btag, light))
             
-            ## lepton SFs
-            #weight.add("lepton", self.leptonSF.get(electron, muon))
+            # lepton SFs
+           # weight.add("lepton", self.leptonSF.get(electron, muon))
         
         cutflow     = Cutflow(output, ev, weight=weight)
 
@@ -239,7 +241,10 @@ class trilep_analysis(processor.ProcessorABC):
         )
             
         output['high_p_fwd_p'].fill(dataset=dataset, p = ak.flatten(j_fwd[BL].p), weight = weight.weight()[BL])
-        
+               
+
+
+
         return output
 
     def postprocess(self, accumulator):
@@ -275,6 +280,9 @@ if __name__ == '__main__':
         'diboson': fileset_2018['diboson'],
         'ttbar': fileset_2018['top2l'], # like 20 events (10x signal)
         'DY': fileset_2018['DY'], # like 20 events (10x signal)
+        'MuonEG': fileset_2018['MuonEG'],
+        'DoubleMuon': fileset_2018['DoubleMuon'],
+        'EGamma': fileset_2018['EGamma'],
     }
 
     fileset = make_small(fileset, small)

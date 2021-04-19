@@ -11,19 +11,24 @@ colors = {
     'tW_scattering': '#FF595E',
     'topW_v2': '#FF595E',
     'topW_v3': '#FF595E',
+    'signal': '#FF595E',
     #'tW_scattering': '#000000', # this would be black
     'TTW': '#8AC926',
+    'prompt': '#8AC926',
     'TTX': '#FFCA3A',
     'TTZ': '#FFCA3A',
+    'lost lepton': '#FFCA3A',
     'TTH': '#34623F',
     'TTTT': '#0F7173',
     'ttbar': '#1982C4',
+    'non prompt': '#1982C4',
     'wjets': '#6A4C93',
     'diboson': '#525B76',
     'rare': '#6A4C93',
     'WZ': '#525B76',
     'WW': '#34623F',
     'DY': '#6A4C93',
+    'charge flip': '#6A4C93',
     'MuonEG': '#000000',
 }
 '''
@@ -37,6 +42,11 @@ my_labels = {
     'tW_scattering': 'top-W scat.',
     'topW_v2': 'top-W scat.',
     'topW_v3': 'top-W scat.',
+    'signal': 'top-W scat.',
+    'prompt': 'prompt/irred.',
+    'non prompt': 'nonprompt',
+    'charge flip': 'charge flip',
+    'lost lepton': 'lost lepton',
     'TTW': r'$t\bar{t}$W+jets',
     'TTX': r'$t\bar{t}$Z/H',
     'TTH': r'$t\bar{t}$H',
@@ -106,7 +116,7 @@ signal_fill_opts = {
 }
 
 
-def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[]):
+def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=None, overlay=None):
     
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
@@ -123,8 +133,10 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
         histogram = output[histo].copy()
 
     histogram = histogram.project(axis, 'dataset')
+    if overlay: overlay = overlay.project(axis, 'dataset')
     if bins:
         histogram = histogram.rebin(axis, bins)
+        if overlay: overlay = overlay.rebin(axis, bins)
 
     y_max = histogram[bkg_sel].sum("dataset").values(overflow='over')[()].max()
 
@@ -160,14 +172,16 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
 
     if signals:
         for sig in signals:
-            ax = hist.plot1d(histogram[sig], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None)
+            ax = hist.plot1d(histogram[sig], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
+    if overlay:
+        ax = hist.plot1d(overlay, overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
 
     if shape:
-        ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None)
+        ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
     else:
-        ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, order=(order if order else processes))
+        ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, order=(order if order else processes), binwnorm=binwnorm)
     if data:
-        ax = hist.plot1d(histogram[data_sel].sum("dataset"), ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
+        ax = hist.plot1d(histogram[data_sel].sum("dataset"), ax=ax, overflow='over', error_opts=data_err_opts, clear=False, binwnorm=binwnorm)
         #ax = hist.plot1d(observation, ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
 
         hist.plotratio(
@@ -208,20 +222,22 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     ax.set_xlabel(axis_label)
     ax.set_ylabel('Events')
     
-    if not shape:
-        addUncertainties(ax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
+    if not binwnorm:
+        if not shape:
+            addUncertainties(ax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=False, scales=scales)
 
-    if data:
-        addUncertainties(rax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=True, scales=scales)
+        if data:
+            addUncertainties(rax, axis, histogram, bkg_sel, [output[histo+'_'+x] for x in upHists], [output[histo+'_'+x] for x in downHists], overflow='over', rebin=bins, ratio=True, scales=scales)
     
     if log:
         ax.set_yscale('log')
         
-    y_mult = 1.3 if not log else 100
+    y_mult = 1.7 if not log else 100
     if ymax:
         ax.set_ylim(0.01, ymax)
     else:
         ax.set_ylim(0.01,y_max*y_mult if not shape else 2)
+        #if binwnorm: ax.set_ylim(0.5)
 
     ax.legend(
         loc='upper right',
@@ -232,8 +248,11 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     )
     plt.subplots_adjust(hspace=0)
 
-    fig.text(0.0, 0.995, '$\\bf{CMS}$ Preliminary', fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
-    fig.text(0.8, 0.995, '13 TeV', fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+    if len(data)>0:
+        fig.text(0.0, 0.995, '$\\bf{CMS}$ Preliminary', fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+    else:
+        fig.text(0.0, 0.995, '$\\bf{CMS}$ Simulation', fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+    fig.text(0.6, 0.995, r'$%.1f\ fb^{-1}$ (13 TeV)'%(lumi), fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
 
     if normalize:
         fig.text(0.55, 0.65, 'Data/MC = %s'%round(Data_total/MC_total,2), fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
@@ -249,6 +268,8 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
 
 def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over', rebin=False, ratio=False, scales={}):
     
+    #print (up_vars)
+
     if rebin:
         h = h.project(axis, 'dataset').rebin(axis, rebin)
     
@@ -258,6 +279,8 @@ def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over'
     central = values[0]
     stats = values[1]
     
+    #print (central)
+    
     up = np.zeros_like(central)
     down = np.zeros_like(central)
     
@@ -265,6 +288,7 @@ def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over'
         if rebin:
             up_var = up_var.project(axis, 'dataset').rebin(axis, rebin)
             up_var.scale(scales, axis='dataset')
+        #print (up_var[selection].values())
         up += (up_var[selection].sum('dataset').values(overflow=overflow, sumw2=False)[()] - central)**2
     
     for down_var in down_vars:
@@ -300,15 +324,17 @@ def scale_and_merge(histogram, samples, fileset, nano_mapping, lumi=60):
     nano_mapping -- dictionary to map NanoAOD samples into categories
     lumi -- integrated luminosity in 1/fb
     """
-    histogram = histogram.copy()
+    temp = histogram.copy()
     
     scales = {sample: lumi*1000*samples[sample]['xsec']/samples[sample]['sumWeight'] for sample in samples if sample in fileset}
-    histogram.scale(scales, axis='dataset')
+    # print (scales)
+    temp.scale(scales, axis='dataset')
     for cat in nano_mapping:
         # print (cat)
         if len(nano_mapping[cat])>1:
             for sample in nano_mapping[cat][1:]:
-                histogram[nano_mapping[cat][0]].add(histogram[sample])
-                histogram = histogram.remove([sample], 'dataset')
+                # print ("Adding %s to %s, removing the individual entry"%(sample, nano_mapping[cat][0]))
+                temp[nano_mapping[cat][0]].add(temp[sample])
+                temp = temp.remove([sample], 'dataset')
                 
-    return histogram
+    return temp

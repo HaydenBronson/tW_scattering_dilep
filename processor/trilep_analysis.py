@@ -51,11 +51,12 @@ class trilep_analysis(processor.ProcessorABC):
         output['skimmedEvents']['all'] += len(ev)
         
         ## Generated leptons
-        gen_lep = ev.GenL
+        '''gen_lep = ev.GenL
         leading_gen_lep = gen_lep[ak.singletons(ak.argmax(gen_lep.pt, axis=1))]
-        trailing_gen_lep = gen_lep[ak.singletons(ak.argmin(gen_lep.pt, axis=1))]
+        trailing_gen_lep = gen_lep[ak.singletons(ak.argmin(gen_lep.pt, axis=1))]'''
 
         ## Muons
+
         muon     = Collections(ev, "Muon", "tightTTH").get()
         vetomuon = Collections(ev, "Muon", "vetoTTH").get()
         leading_muon_idx = ak.singletons(ak.argmax(muon.pt, axis=1))
@@ -127,8 +128,8 @@ class trilep_analysis(processor.ProcessorABC):
             # b-tag SFs
             weight.add("btag", self.btagSF.Method1a(btag, light))
             
-            # lepton SFs
-           # weight.add("lepton", self.leptonSF.get(electron, muon))
+          #  lepton SFs
+          #  weight.add("lepton", self.leptonSF.get(electron, muon))
         
         cutflow     = Cutflow(output, ev, weight=weight)
 
@@ -158,12 +159,12 @@ class trilep_analysis(processor.ProcessorABC):
         output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(vetoelectron)[BL], weight=weight.weight()[BL])
         output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(vetomuon)[BL], weight=weight.weight()[BL])
         output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL], weight=weight.weight()[BL])
-        output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight.weight()[BL])
+        '''output['nLepFromTop'].fill(dataset=dataset, multiplicity=ev[BL].nLepFromTop, weight=weight.weight()[BL])
         output['nLepFromTau'].fill(dataset=dataset, multiplicity=ev.nLepFromTau[BL], weight=weight.weight()[BL])
         output['nLepFromZ'].fill(dataset=dataset, multiplicity=ev.nLepFromZ[BL], weight=weight.weight()[BL])
         output['nLepFromW'].fill(dataset=dataset, multiplicity=ev.nLepFromW[BL], weight=weight.weight()[BL])
         output['nGenTau'].fill(dataset=dataset, multiplicity=ev.nGenTau[BL], weight=weight.weight()[BL])
-        output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight.weight()[BL])
+        output['nGenL'].fill(dataset=dataset, multiplicity=ak.num(ev.GenL[BL], axis=1), weight=weight.weight()[BL])'''
         
         # make a plot of the dilepton mass, but without applying the cut on the dilepton mass itself (N-1 plot)
         output['dilep_mass'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_mass[sel.trilep_baseline(omit=['offZ'])]), weight=weight.weight()[sel.trilep_baseline(omit=['offZ'])])
@@ -175,7 +176,7 @@ class trilep_analysis(processor.ProcessorABC):
             weight = weight.weight()[BL]
         )
 
-        output['lead_gen_lep'].fill(
+        '''output['lead_gen_lep'].fill(
             dataset = dataset,
             pt  = ak.to_numpy(ak.flatten(leading_gen_lep[BL].pt)),
             eta = ak.to_numpy(ak.flatten(leading_gen_lep[BL].eta)),
@@ -189,7 +190,7 @@ class trilep_analysis(processor.ProcessorABC):
             eta = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].eta)),
             phi = ak.to_numpy(ak.flatten(trailing_gen_lep[BL].phi)),
             weight = weight.weight()[BL]
-        )
+        )'''
         
         output['lead_lep'].fill(
             dataset = dataset,
@@ -267,7 +268,7 @@ if __name__ == '__main__':
     cfg = loadConfig()
     '''hi hayden, you're going to forget what the cache names are. 'trilep_analysis_SS_2tight' 'trilep_analysis_3tight' 'trilep_analysis_2tight_1veto'''
   
-    cacheName = 'trilep_analysis_2tight_1veto'
+    cacheName = 'trilep_analysis_3tight'
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     

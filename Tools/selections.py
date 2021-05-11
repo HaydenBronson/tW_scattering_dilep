@@ -168,7 +168,7 @@ class Selection:
         lep1pt_veto     = ((ak.num(self.ele_veto[(self.ele_veto.pt>20)]) + ak.num(self.mu_veto[(self.mu_veto.pt>20)]))>1)
 
         self.selection.add('lepveto',       lepveto)
-        self.selection.add('trilep',        is_trilep)
+        self.selection.add('trilep',        los_trilep)
         self.selection.add('filter',        self.filters)
         self.selection.add('trigger',       triggers)
         self.selection.add('p_T(lep0)>25',  lep0pt_veto)

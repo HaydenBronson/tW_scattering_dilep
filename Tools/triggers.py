@@ -1,5 +1,9 @@
 import numpy as np
-import awkward as ak
+try:
+    import awkward1 as ak
+except ImportError:
+    import awkward as ak
+
 import re
 ## happily borrowed from https://github.com/bu-cms/bucoffea/blob/master/bucoffea/helpers/helpers.py
 
@@ -106,6 +110,8 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
     leading_ele = (abs(leading_pdg) == 11)
     leading_mu  = (abs(leading_pdg) == 13)
 
+
+    # lepton triggers from here: https://indico.cern.ch/event/718554/contributions/3027981/attachments/1667626/2674497/leptontriggerreview.pdf
     if year == 2018:
         triggers['MuonEG'] = [\
             "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
@@ -115,14 +121,14 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
         ]
 
         triggers['DoubleMuon'] = [\
-            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL",
-            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8",
             "Mu37_TkMu27",
         ]
 
         triggers['DoubleEG'] = [\
             "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL",
             "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ",
+            "DoubleEle25_CaloIdL_MW",
         ]
 
         triggers['MET'] = [\
@@ -172,4 +178,10 @@ def getTriggers(ev, leading_pdg, subleading_pdg, year=2018, dataset='None'):
         ee = (mask_or(ev, "HLT", triggers['DoubleEG']) & same_flavor & leading_ele)
         em = (mask_or(ev, "HLT", triggers['MuonEG']) & ~same_flavor)
         return (mm | ee | em)
+
+
+    #if re.search(re.compile("MuonEG|DoubleMuon|DoubleEG|EGamma|SingleMuon|SingleElectron"), dataset):  #  dataset.lower().count('muon') or dataset.lower().count('electron'):
+    #    return mask_or(ev, "HLT", triggers[dataset])
+    #else:
+    #    return mask_or(ev, "HLT", triggers['MuonEG'] + triggers['DoubleMuon'] + triggers['DoubleEG'])  # should be OR of all dilepton triggers
 

@@ -129,7 +129,7 @@ class Selection:
         self.selection = PackedSelection()
 
         is_trilep  = ((ak.num(self.ele) + ak.num(self.mu))==3)
-        los_trilep = ((ak.num(self.ele) + ak.num(self.mu))==2)
+        los_trilep = ((ak.num(self.ele) + ak.num(self.mu))>=2)
         pos_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))<0)
         neg_charge = ((ak.sum(self.ele.pdgId, axis=1) + ak.sum(self.mu.pdgId, axis=1))>0)
         lep0pt     = ((ak.num(self.ele[(self.ele.pt>25)]) + ak.num(self.mu[(self.mu.pt>25)]))>0)

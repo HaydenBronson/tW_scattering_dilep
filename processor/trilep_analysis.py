@@ -74,7 +74,7 @@ class trilep_analysis(processor.ProcessorABC):
         dimuon = choose(muon,2)
         OS_dimuon = dimuon[(dimuon['0'].charge*dimuon['1'].charge < 0)]
 
-        dielectron = choose(electron)
+        dielectron = choose(electron,2)
         OS_dielectron = dielectron[(dielectron['0'].charge*dielectron['1'].charge < 0)]
 
         OS_dimuon_bestZmumu = OS_dimuon[ak.singletons(ak.argmin(abs(OS_dimuon.mass-91.2), axis=1))]
@@ -244,8 +244,10 @@ class trilep_analysis(processor.ProcessorABC):
             
         output['high_p_fwd_p'].fill(dataset=dataset, p = ak.flatten(j_fwd[BL].p), weight = weight.weight()[BL])
                
-
-
+        vetolepton   = ak.concatenate([vetomuon, vetoelectron], axis=1)    
+        trilep = choose3(vetolepton, 3)
+        trilep_m = trilep.mass
+        output['m3l'].fill(dataset=dataset, mass=ak.flatten(trilep_m[BL]), weight=weight.weight()[BL])
 
         return output
 
@@ -269,7 +271,7 @@ if __name__ == '__main__':
     cfg = loadConfig()
     '''hi hayden, you're going to forget what the cache names are. 'trilep_analysis_SS_2tight' 'trilep_analysis_3tight' 'trilep_analysis_2tight_1veto'''
   
-    cacheName = 'trilep_analysis_2tight_1veto'
+    cacheName = 'trilep_analysis_SS_2tight'
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
@@ -296,6 +298,7 @@ if __name__ == '__main__':
     from processor.default_accumulators import mass_axis, dataset_axis
     desired_output.update({
         "dilep_mass": hist.Hist("Counts", dataset_axis, mass_axis),
+        "m3l": hist.Hist("Counts", dataset_axis, mass_axis),
     })
 
     histograms = sorted(list(desired_output.keys()))

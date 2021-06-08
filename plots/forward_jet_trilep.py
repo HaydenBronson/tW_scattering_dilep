@@ -28,9 +28,9 @@ if __name__ == '__main__':
     small = False
     cfg = loadConfig()
 
-    plot_dir = os.path.expandvars(cfg['meta']['plots']) + '/UL/'
+    plot_dir = os.path.expandvars(cfg['meta']['plots']) + '/UL/' + 'trilep'
     
-    cacheName = 'forward'
+    cacheName = 'forward_trilep'
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
 

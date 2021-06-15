@@ -80,7 +80,7 @@ class trilep_analysis(processor.ProcessorABC):
         OS_dimuon_bestZmumu = OS_dimuon[ak.singletons(ak.argmin(abs(OS_dimuon.mass-91.2), axis=1))]
         OS_dielectron_bestZee = OS_dielectron[ak.singletons(ak.argmin(abs(OS_dielectron.mass-91.2), axis=1))]
         OS_dilepton_mass = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimuon_bestZmumu.mass, OS_dielectron_bestZee.mass], axis=1), 1, clip=True), -1)
-
+        
         lepton   = ak.concatenate([muon, electron], axis=1)
         leading_lepton_idx = ak.singletons(ak.argmax(lepton.pt, axis=1))
         leading_lepton = lepton[leading_lepton_idx]

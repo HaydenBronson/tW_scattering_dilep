@@ -72,13 +72,13 @@ groups_UL = {
     'TTXnoW':        ['/TTZToLLNuNu[-_]', '/TWZToLL[-_]', '/TH[W,Q][-_]', '/TT[T,W,Z][T,W,Z][-_]', '/tZq[-_]', '/ttHToNonbb[-_]'],
     'TTW':           ['/TTWJets'],
     'TTH':           ['/TH[W,Q][-_]', '/ttHJetToNonbb[-_]'],
-    'TTZ':           ['/TTZToLLNuNu[-_]', '/ST_tWll[-_]', '/ST_tWnunu[-_]', '/tZq[-_]', '/TT[W,Z][W,Z][-_]'],
+    'TTZ':           ['/TTZToLLNuNu[-_]', '/TWZToLL[-_]', '/tZq[-_]', '/TT[W,Z][W,Z][-_]'],
     'TTTT':          ['/TTTT[-_]'],
     'top':           ['/TTTo2L2Nu', '/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
     'top1l':         ['/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
     'top2l':         ['/TTTo2L2Nu', '/ST_t-channel', '/ST_tW[-_]'],
     'wjets':         ['/W[1-4]JetsToLNu[-_]'],
-    'diboson':       ['/WZTo.*amcatnloFXFX', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]', '/WpWp*'], # there's also a powheg sample
+    'diboson':       ['/WZTo', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]', '/WpWp*'],
     'wpwp':          ['/WpWp*'], # that's the SS sample. roughly 10% of ttW, but 50% of diboson at presel level
     'triboson':      ['/[W,Z][W,Z][W,Z][-_]'],
     'WW':            ['/WWTo'], 
@@ -88,6 +88,10 @@ groups_UL = {
     'MuonEG_Run2018':       ['/MuonEG'],
     'EGamma_Run2018':       ['/EGamma'],
     'DoubleMuon_Run2018':   ['/DoubleMuon'],
+
+    'MuonEG':       ['/MuonEG'],
+    'DoubleEG':     ['/DoubleEG'],
+    'DoubleMuon':   ['/DoubleMuon'],
 }
 
 
@@ -135,6 +139,8 @@ def get_babies(data_path, small=False, year=2018):
         campaign = '.*'
     elif year=='UL2018':
         campaign = '.*(Summer20UL18|Run2018)'
+    elif year=='UL2017':
+        campaign = '.*(Summer20UL17|Run2017)'
     
     for sample in samples:
         for group in groups.keys():

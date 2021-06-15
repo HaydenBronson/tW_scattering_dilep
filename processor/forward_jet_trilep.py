@@ -88,6 +88,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         leading_lepton = lepton[leading_lepton_idx]
         trailing_lepton_idx = ak.singletons(ak.argmin(lepton.pt, axis=1))
         trailing_lepton = lepton[trailing_lepton_idx]
+        second_lepton = lepton[~(trailing_lepton_idx & leading_lepton_idx)]
         
         ## Jets
         jet       = getJets(ev, minPt=25, maxEta=4.7, pt_var='pt_nom')
@@ -125,7 +126,11 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         ## other variables
         ht = ak.sum(jet.pt, axis=1)
         st = met_pt + ht + ak.sum(muon.pt, axis=1) + ak.sum(electron.pt, axis=1)
+        lt = met_pt + ak.sum(muon.pt, axis=1) + ak.sum(electron.pt, axis=1)
         ht_central = ak.sum(central.pt, axis=1)
+        
+        
+       
         
         # define the weight
         weight = Weights( len(ev) )
@@ -174,6 +179,38 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['N_central'].fill(dataset=dataset, multiplicity=ak.num(central)[BL], weight=weight.weight()[BL])
         output['N_ele'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight.weight()[BL])
         output['N_mu'].fill(dataset=dataset, multiplicity=ak.num(electron)[BL], weight=weight.weight()[BL])
+        
+        output['ST'].fill(dataset=dataset, ht=st[BL], weight=weight.weight()[BL])
+        output['HT'].fill(dataset=dataset, ht=ht[BL], weight=weight.weight()[BL])
+        output['LT'].fill(dataset=dataset, ht=lt[BL], weight=weight.weight()[BL])
+        
+        vetolepton   = ak.concatenate([vetomuon, vetoelectron], axis=1)    
+        trilep = choose3(vetolepton, 3)
+        trilep_m = trilep.mass
+        
+        dimu_veto = choose(vetomuon,2)
+        diele_veto = choose(vetoelectron,2) 
+        OS_dimu_veto = dimu_veto[(dimu_veto['0'].charge*dimu_veto['1'].charge < 0)]
+        OS_diele_veto = diele_veto[(diele_veto['0'].charge*diele_veto['1'].charge < 0)]
+        
+        OS_dimuon_bestZmumu = OS_dimu_veto[ak.singletons(ak.argmin(abs(OS_dimu_veto.mass-91.2), axis=1))]
+        OS_dielectron_bestZee = OS_diele_veto[ak.singletons(ak.argmin(abs(OS_diele_veto.mass-91.2), axis=1))]
+        OS_dilepton_mass = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimuon_bestZmumu.mass, OS_dielectron_bestZee.mass], axis=1), 1, clip=True), -1)
+        OS_dilepton_pt = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimuon_bestZmumu.pt, OS_dielectron_bestZee.pt], axis=1), 1, clip=True), -1)
+        
+        #OS_dimuon_min = OS_dimu_veto[ak.argmin(OS_dimu_veto.mass, axis=1)]
+        #OS_dielectron_min = OS_diele_veto[ak.argmin(OS_diele_veto.mass, axis=1)]
+        #SFOS_min = ak.concatenate([OS_dielectron_min, OS_dimuon_min], axis=1)
+        #SFOS_min = ak.fill_none(SFOS_min.mass, 0)
+        #output['min_mass_SFOS'].fill(dataset=dataset, mass=(SFOS_min[BL]), weight=weight.weight()[BL])
+        
+        OS_min_mass = ak.min(ak.concatenate([OS_dimu_veto.mass, OS_diele_veto.mass], axis=1), axis=1)
+        OS_min_mass = ak.fill_none(OS_min_mass, 0)
+        output['min_mass_SFOS'].fill(dataset=dataset, mass=(OS_min_mass[BL]), weight=weight.weight()[BL])
+        
+        output['onZ_pt'].fill(dataset=dataset, pt=ak.flatten(OS_dilepton_pt[BL]), weight=weight.weight()[BL])
+        output['M3l'].fill(dataset=dataset, mass=ak.flatten(trilep_m[BL]), weight=weight.weight()[BL])
+        output['M_ll'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_mass[BL]), weight=weight.weight()[BL])
 
         BL_minusFwd = sel.trilep_baseline(omit=['N_fwd>0'])
         output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL_minusFwd], weight=weight.weight()[BL_minusFwd])
@@ -215,6 +252,14 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL].pt)),
             eta = ak.to_numpy(ak.flatten(trailing_lepton[BL].eta)),
             phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
+            weight = weight.weight()[BL]
+        )
+        
+        output['second_lep'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(second_lepton[BL].pt)),
+            eta = ak.to_numpy(ak.flatten(second_lepton[BL].eta)),
+            phi = ak.to_numpy(ak.flatten(second_lepton[BL].phi)),
             weight = weight.weight()[BL]
         )
         
@@ -349,6 +394,20 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     phi = ak.flatten(jet.phi[:, 0:1][BL]),
                     weight = weight.weight()[BL]
                 )
+                output['j2_'+var].fill(
+                    dataset = dataset,
+                    pt  = ak.flatten(jet.pt[:, 0:1][BL]),
+                    eta = ak.flatten(jet.eta[:, 0:1][BL]),
+                    phi = ak.flatten(jet.phi[:, 0:1][BL]),
+                    weight = weight.weight()[BL]
+                )
+                output['j3_'+var].fill(
+                    dataset = dataset,
+                    pt  = ak.flatten(jet.pt[:, 0:1][BL]),
+                    eta = ak.flatten(jet.eta[:, 0:1][BL]),
+                    phi = ak.flatten(jet.phi[:, 0:1][BL]),
+                    weight = weight.weight()[BL]
+                )
                 
                 output['b1_'+var].fill(
                     dataset = dataset,
@@ -397,11 +456,11 @@ if __name__ == '__main__':
     # load the config and the cache
     cfg = loadConfig()
     
-    cacheName = 'forward_trilep'
+    cacheName = 'forward_trilep_2018_inclusiveNb'
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
-    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.1_trilep/', year='UL2018')
+    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.2_trilep/', year='UL2018')
     
     fileset = {
         #'tW_scattering': fileset_all['tW_scattering'],
@@ -427,6 +486,15 @@ if __name__ == '__main__':
                 'MuonEG_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
                 'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
                 'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                "M_ll": hist.Hist("Counts", dataset_axis, mass_axis),
+                "M3l": hist.Hist("Counts", dataset_axis, mass_axis),
+                "ST": hist.Hist("Counts", dataset_axis, ht_axis),
+                "HT": hist.Hist("Counts", dataset_axis, ht_axis),
+                "LT": hist.Hist("Counts", dataset_axis, ht_axis),
+                "onZ_pt": hist.Hist("Counts", dataset_axis, pt_axis),
+                "min_mass_SFOS": hist.Hist("Counts", dataset_axis, mass_axis),
+                "second_lep":          hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+            
              })
 
     histograms = sorted(list(desired_output.keys()))

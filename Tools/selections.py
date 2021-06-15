@@ -152,8 +152,8 @@ class Selection:
         offZ = (ak.all(abs(OS_dimu.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele.mass-91.2)>10, axis=1))
         offZ_veto = (ak.all(abs(OS_dimu_veto.mass-91.2)>10, axis=1) & ak.all(abs(OS_diele_veto.mass-91.2)>10, axis=1))
         onZ = (ak.all(abs(OS_dimu.mass-91.2)<10, axis=1) & ak.all(abs(OS_diele.mass-91.2)<10, axis=1))
-        onZ_veto = (ak.all(abs(OS_dimu_veto.mass-91.2)<10, axis=1) & ak.all(abs(OS_diele_veto.mass-91.2)<10, axis=1))
-
+        onZ_veto = (ak.any(abs(OS_dimu_veto.mass-91.2)<10, axis=1) | ak.any(abs(OS_diele_veto.mass-91.2)<10, axis=1))
+        
         lepton = ak.concatenate([self.ele, self.mu], axis=1)
         lepton_pdgId_pt_ordered = ak.fill_none(ak.pad_none(lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True), 0)
         dilep = choose(lepton,2)
@@ -186,7 +186,7 @@ class Selection:
         self.selection.add('N_jet>3',       (ak.num(self.jet_all)>3) )
         self.selection.add('N_central>1',   (ak.num(self.jet_central)>1) )
         self.selection.add('N_central>2',   (ak.num(self.jet_central)>2) )
-        self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0  ))
+        #self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0  ))
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st_veto>600) )
@@ -206,7 +206,7 @@ class Selection:
             'MET>50',
             'N_jet>2',
             'N_central>1',
-            'N_btag>0',
+            #'N_btag>0',
             'N_fwd>0',
             #'SFOS>=1',
             #'charge_sum'

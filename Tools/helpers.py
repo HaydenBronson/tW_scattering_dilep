@@ -4,16 +4,16 @@ Most of these functions need to be updated for awkward1.
 '''
 import pandas as pd
 import numpy as np
-import awkward as ak
+try:
+    import awkward1 as ak
+except ImportError:
+    import awkward as ak
 
-#import yaml
 from yaml import load, dump
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
     from yaml import Loader, Dumper
-
-#from yaml import Loader, Dumper
 
 import os
 import shutil
@@ -23,6 +23,10 @@ import copy
 import glob
 
 data_path = os.path.expandvars('$TWHOME/data/')
+
+def get_samples(f_in='samples.yaml'):
+    with open(data_path+f_in) as f:
+        return load(f, Loader=Loader)
 
 def loadConfig():
     with open(data_path+'config.yaml') as f:
@@ -48,23 +52,20 @@ def getName( DAS ):
         return '_'.join(DAS.split('/')[-3:-1])
         #return'dummy'
 
+def dasWrapper(DASname, query='file'):
+    sampleName = DASname.rstrip('/')
+
+    dbs='dasgoclient -query="%s dataset=%s"'%(query, sampleName)
+    dbsOut = os.popen(dbs).readlines()
+    dbsOut = [ l.replace('\n','') for l in dbsOut ]
+    return dbsOut
+
 def finalizePlotDir( path ):
     path = os.path.expandvars(path)
     if not os.path.isdir(path):
         os.makedirs(path)
     shutil.copy( os.path.expandvars( '$TWHOME/Tools/php/index.php' ), path )
     
-
-def doAwkwardLookup(h, ar):
-    '''
-    takes a ya_hist histogram (which has a lookup function) and an awkward array.
-    '''
-    return ak.unflatten(
-        h.lookup(
-            ak.to_numpy(
-                ak.flatten(ar)
-            ) 
-        ), ak.num(ar) )
 
 def getCutFlowTable(output, processes=['tW_scattering', 'TTW', 'ttbar'], lines=['skim', 'twoJet', 'oneBTag'], significantFigures=3, absolute=True, signal=None, total=False):
     '''
@@ -199,81 +200,32 @@ def mt(pt1, phi1, pt2, phi2):
     return np.sqrt( 2*pt1*pt2 * (1 - np.cos(phi1-phi2)) )
 
 def pad_and_flatten(val): 
+    import awkward as ak
     try:
-        return val.pad(1, clip=True).fillna(0.).flatten()#.reshape(-1, 1)
-    except AttributeError:
-        return val.flatten()
+        return ak.flatten(ak.fill_none(ak.pad_none(val, 1, clip=True), 0))
+        #return val.pad(1, clip=True).fillna(0.).flatten()#.reshape(-1, 1)
+    except ValueError:
+        return ak.flatten(val)
 
-##from coffea.hist.hist_tools import SparseAxis, DenseAxis
-#from uproot_methods.classes.TH1 import Methods as TH1Methods
-#from uproot_methods.classes import TH1
-#
-#class TH1(TH1Methods, list):
-#    pass
-#
-#
-#class TAxis(object):
-#    def __init__(self, fNbins, fXmin, fXmax):
-#        self._fNbins = fNbins
-#        self._fXmin = fXmin
-#        self._fXmax = fXmax
-#
-#def export1d(hist, overflow='none'):
-#    """Export a 1-dimensional `Hist` object to uproot
-#    This allows one to write a coffea histogram into a ROOT file, via uproot.
-#    Parameters
-#    ----------
-#        hist : Hist
-#            A 1-dimensional histogram object
-#    Returns
-#    -------
-#        out
-#            A ``uproot_methods.classes.TH1`` object
-#    Examples
-#    --------
-#    Creating a coffea histogram, filling, and writing to a file::
-#        import coffea, uproot, numpy
-#        h = coffea.hist.Hist("Events", coffea.hist.Bin("var", "some variable", 20, 0, 1))
-#        h.fill(var=numpy.random.normal(size=100))
-#        fout = uproot.create('output.root')
-#        fout['myhist'] = coffea.hist.export1d(h)
-#        fout.close()
-#    """
-#    if hist.dense_dim() != 1:
-#        raise ValueError("export1d() can only support one dense dimension")
-#    if hist.sparse_dim() != 0:
-#        raise ValueError("export1d() expects zero sparse dimensions")
-#
-#    axis = hist.axes()[0]
-#    sumw, sumw2 = hist.values(sumw2=True, overflow='all')[()]
-#    edges = axis.edges(overflow='none')
-#
-#    out = TH1.__new__(TH1)
-#    out._fXaxis = TAxis(len(edges) - 1, edges[0], edges[-1])
-#    out._fXaxis._fName = axis.name
-#    out._fXaxis._fTitle = axis.label
-#    if not axis._uniform:
-#        out._fXaxis._fXbins = edges.astype(">f8")
-#
-#    if overflow=='under' or overflow=='all':
-#        sumw[1] += sumw[0]
-#        sumw2[1] += sumw2[0]
-#    
-#    if overflow=='over' or overflow=='all':
-#        sumw[-2] += sumw[-1]
-#        sumw2[-2] += sumw2[-1]
-#    
-#    centers = (edges[:-1] + edges[1:]) / 2.0
-#    
-#    out._fEntries = out._fTsumw = out._fTsumw2 = sumw[1:-1].sum()
-#    out._fTsumwx = (sumw[1:-1] * centers).sum()
-#    out._fTsumwx2 = (sumw[1:-1] * centers**2).sum()
-#
-#    out._fName = "histogram"
-#    out._fTitle = hist.label
-#    
-#    out._classname = b"TH1D"
-#    out.extend(sumw.astype(">f8"))
-#    out._fSumw2 = sumw2.astype(">f8")
-#
-#    return out
+
+def yahist_1D_lookup(h, ar):
+    '''
+    takes a yahist 1D histogram (which has a lookup function) and an awkward array.
+    '''
+    return ak.unflatten(
+        h.lookup(
+            ak.to_numpy(ak.flatten(ar)) 
+        ), ak.num(ar) )
+
+def yahist_2D_lookup(h, ar1, ar2):
+    '''
+    takes a yahist 2D histogram (which has a lookup function) and an awkward array.
+    '''
+    return ak.unflatten(
+        h.lookup(
+            ak.to_numpy(ak.flatten(ar1)),
+            ak.to_numpy(ak.flatten(ar2)),
+        ), ak.num(ar1) )
+
+def build_weight_like(weight, selection, like):
+    return ak.flatten(weight[selection] * ak.ones_like(like[selection]))

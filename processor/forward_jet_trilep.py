@@ -17,6 +17,7 @@ from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.ttH_lepton_scalefactors import *
 from Tools.selections import Selection
+from Tools.helpers import mt
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -129,7 +130,16 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         lt = met_pt + ak.sum(muon.pt, axis=1) + ak.sum(electron.pt, axis=1)
         ht_central = ak.sum(central.pt, axis=1)
         
+        tau       = getTaus(ev)
+        track     = getIsoTracks(ev)
         
+        bl          = cross(lepton, high_score_btag)
+        bl_dR       = delta_r(bl['0'], bl['1'])
+        min_bl_dR   = ak.min(bl_dR, axis=1)
+
+        mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
+        min_mt_lep_met = ak.min(mt_lep_met, axis=1)
+        dilepton_dR = delta_r(leading_lepton, trailing_lepton)
        
         
         # define the weight
@@ -212,6 +222,24 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['M3l'].fill(dataset=dataset, mass=ak.flatten(trilep_m[BL]), weight=weight.weight()[BL])
         output['M_ll'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_mass[BL]), weight=weight.weight()[BL])
 
+        output['N_tau'].fill(dataset=dataset, multiplicity=ak.num(tau)[BL], weight=weight.weight()[BL])
+        output['N_track'].fill(dataset=dataset, multiplicity=ak.num(track)[BL], weight=weight.weight()[BL])
+        
+        output['mjf_max'].fill(dataset=dataset, mass=mjf_max[BL], weight=weight.weight()[BL])
+        output['deltaEta'].fill(dataset=dataset, eta=ak.flatten(deltaEta[BL]), weight=weight.weight()[BL])
+        output['min_bl_dR'].fill(dataset=dataset, eta=min_bl_dR[BL], weight=weight.weight()[BL])
+        output['min_mt_lep_met'].fill(dataset=dataset, pt=min_mt_lep_met[BL], weight=weight.weight()[BL])
+        
+        output['leading_jet_pt'].fill(dataset=dataset, pt=ak.flatten(jet[:, 0:1][BL].pt), weight=weight.weight()[BL])
+        output['subleading_jet_pt'].fill(dataset=dataset, pt=ak.flatten(jet[:, 1:2][BL].pt), weight=weight.weight()[BL])
+        output['leading_jet_eta'].fill(dataset=dataset, eta=ak.flatten(jet[:, 0:1][BL].eta), weight=weight.weight()[BL])
+        output['subleading_jet_eta'].fill(dataset=dataset, eta=ak.flatten(jet[:, 1:2][BL].eta), weight=weight.weight()[BL])
+        
+        output['leading_btag_pt'].fill(dataset=dataset, pt=ak.flatten(high_score_btag[:, 0:1][BL].pt), weight=weight.weight()[BL])
+        output['subleading_btag_pt'].fill(dataset=dataset, pt=ak.flatten(high_score_btag[:, 1:2][BL].pt), weight=weight.weight()[BL])
+        output['leading_btag_eta'].fill(dataset=dataset, eta=ak.flatten(high_score_btag[:, 0:1][BL].eta), weight=weight.weight()[BL])
+        output['subleading_btag_eta'].fill(dataset=dataset, eta=ak.flatten(high_score_btag[:, 1:2][BL].eta), weight=weight.weight()[BL])
+        
         BL_minusFwd = sel.trilep_baseline(omit=['N_fwd>0'])
         output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL_minusFwd], weight=weight.weight()[BL_minusFwd])
         
@@ -456,7 +484,7 @@ if __name__ == '__main__':
     # load the config and the cache
     cfg = loadConfig()
     
-    cacheName = 'forward_trilep_2018_inclusiveNb'
+    cacheName = 'forward_trilep_2018'
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
@@ -467,7 +495,7 @@ if __name__ == '__main__':
         'topW_v3': fileset_all['topW_NLO'],
         #'topW_v3': fileset_all['topW_v3'],
         #'ttbar': fileset_all['ttbar2l'], # dilepton ttbar should be enough for this study.
-        'ttbar': fileset_all['top2l'], # dilepton ttbar should be enough for this study.
+        'ttbar': fileset_all['top'], # dilepton ttbar should be enough for this study.
         'MuonEG': fileset_all['MuonEG_Run2018'],
         'DoubleMuon': fileset_all['DoubleMuon_Run2018'],
         'EGamma': fileset_all['EGamma_Run2018'],
@@ -494,6 +522,20 @@ if __name__ == '__main__':
                 "onZ_pt": hist.Hist("Counts", dataset_axis, pt_axis),
                 "min_mass_SFOS": hist.Hist("Counts", dataset_axis, mass_axis),
                 "second_lep":          hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "N_tau": hist.Hist("Counts", dataset_axis, multiplicity_axis),
+                "N_track": hist.Hist("Counts", dataset_axis, multiplicity_axis),
+                "deltaEta": hist.Hist("Counts", dataset_axis, eta_axis),
+                "mjf_max": hist.Hist("Counts", dataset_axis, mass_axis),
+                "min_bl_dR": hist.Hist("Counts", dataset_axis, eta_axis),
+                "min_mt_lep_met": hist.Hist("Counts", dataset_axis, pt_axis),
+                "leading_jet_pt": hist.Hist("Counts", dataset_axis, pt_axis),
+                "subleading_jet_pt": hist.Hist("Counts", dataset_axis, pt_axis),
+                "leading_jet_eta": hist.Hist("Counts", dataset_axis, eta_axis),
+                "subleading_jet_eta": hist.Hist("Counts", dataset_axis, eta_axis),
+                "leading_btag_pt": hist.Hist("Counts", dataset_axis, pt_axis),
+                "subleading_btag_pt": hist.Hist("Counts", dataset_axis, pt_axis),
+                "leading_btag_eta": hist.Hist("Counts", dataset_axis, eta_axis),
+                "subleading_btag_eta": hist.Hist("Counts", dataset_axis, eta_axis),
             
              })
 

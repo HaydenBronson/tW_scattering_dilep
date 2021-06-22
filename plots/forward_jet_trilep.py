@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     plot_dir = os.path.expandvars(cfg['meta']['plots']) + '/UL/' + 'trilep'
     
-    cacheName = 'forward_trilep_2018_inclusiveNb'
+    cacheName = 'forward_trilep_2018'
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
 
@@ -58,6 +58,8 @@ if __name__ == '__main__':
     onZ_pt_bins =  hist.Bin('pt', r'$p_{T}\ (GeV)$', 40, 0, 600)
     jet_pt_bins = hist.Bin('pt', r'$p_{T}\ (GeV)$', 40, 0, 600)
     phi_bins = hist.Bin('phi', r'$p_{T}\ (GeV)$', 12, -3, 3)
+    mjf_bins = hist.Bin('mass', r'$M\ (GeV)$', 50, 0, 2000)
+    deltaEta_bins = hist.Bin('eta', r'$\eta $', 20, 0, 10.0)
     
     my_labels = {
         'topW_v2': 'top-W scat.',
@@ -87,7 +89,7 @@ if __name__ == '__main__':
         'WZ': '#525B76',
     }
     TFnormalize = True
-    version_dir = '/OS_fwd_2018_v2_inclusiveNb/'
+    version_dir = '/OnZ_fwd_2018_v3/'
 
     makePlot(output, 'lead_lep', 'pt',
         data=['DoubleMuon', 'MuonEG', 'EGamma'],
@@ -251,7 +253,7 @@ if __name__ == '__main__':
     
     makePlot(output, 'j2', 'pt',
         data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=jet_pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ leading\ jet$ (GeV)',
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ leading\ jet$ (GeV)',
         new_colors=my_colors, new_labels=my_labels,
         order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
         #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
@@ -278,7 +280,7 @@ if __name__ == '__main__':
     
     makePlot(output, 'j3', 'pt',
         data=['DoubleMuon', 'MuonEG', 'EGamma'],
-        bins=jet_pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ leading\ jet$ (GeV)',
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ leading\ jet$ (GeV)',
         new_colors=my_colors, new_labels=my_labels,
         order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
         #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
@@ -426,4 +428,111 @@ if __name__ == '__main__':
         order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
         #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
         save=os.path.expandvars(plot_dir+version_dir+'min_mass_SFOS'),
+        )
+    
+    makePlot(output, 'deltaEta', 'eta',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=deltaEta_bins, log=False, normalize=TFnormalize, axis_label=r'$\delta \eta $(GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'deltaEta'),
+        )
+    
+    makePlot(output, 'mjf_max', 'mass',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=mjf_bins, log=True, normalize=TFnormalize, axis_label='mjf_max (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        save=os.path.expandvars(plot_dir+version_dir+'mjf_max'),
+        )
+    
+    makePlot(output, 'min_bl_dR', 'eta',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label='min_bl_dR (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'min_bl_dR'),
+        )
+    
+    makePlot(output, 'min_mt_lep_met', 'pt',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=pt_bins, log=True, normalize=TFnormalize, axis_label='min_mt_lep_met (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'min_mt_lep_met'),
+        )
+    
+    makePlot(output, 'leading_jet_pt', 'pt',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=jet_pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ leading\ jet$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'leading_jet_pt'),
+        )
+    
+    makePlot(output, 'subleading_jet_pt', 'pt',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ subleading\ jet$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'subleading_jet_pt'),
+        )
+    
+    makePlot(output, 'leading_jet_eta', 'eta',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ leading \ btag$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'leading_jet_eta'),
+        )
+    
+    makePlot(output, 'subleading_jet_eta', 'eta',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ subleading \ jet$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'subleading_jet_eta'),
+        )
+    
+    makePlot(output, 'leading_btag_pt', 'pt',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ leading\ btag$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'leading_btag_pt'),
+        )
+    
+    makePlot(output, 'subleading_btag_pt', 'pt',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=pt_bins, log=False, normalize=TFnormalize, axis_label=r'$p_{T}\ subleading\ btag$ (GeV)',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'subleading_btag_pt'),
+        )
+    
+    makePlot(output, 'leading_btag_eta', 'eta',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ leading \ btag$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'leading_btag_eta'),
+        )
+    
+    makePlot(output, 'subleading_btag_eta', 'eta',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=eta_bins, log=False, normalize=TFnormalize, axis_label=r'$\eta\ subleading \ btag$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        #upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        save=os.path.expandvars(plot_dir+version_dir+'subleading_btag_eta'),
         )

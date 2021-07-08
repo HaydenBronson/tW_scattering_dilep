@@ -14,6 +14,7 @@ from Tools.basic_objects import *
 from Tools.cutflow import *
 from Tools.config_helpers import loadConfig, make_small
 from Tools.triggers import *
+from Tools.trigger_scalefactors import *
 from Tools.btag_scalefactors import *
 from Tools.ttH_lepton_scalefactors import *
 from Tools.selections import Selection
@@ -37,7 +38,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         self.btagSF = btag_scalefactor(year)
         
         self.leptonSF = LeptonSF(year=year)
-        
+        self.triggerSF = triggerSF(year=year)
         self._accumulator = processor.dict_accumulator( accumulator )
 
     @property
@@ -144,11 +145,12 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             
             
             # b-tag SFs
-            weight.add("btag", self.btagSF.testMethod1a(btag, light, b_direction='central', c_direction='central'))
+            weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='central', c_direction='central'))
 
             # lepton SFs
             weight.add("lepton", self.leptonSF.get(electron, muon))
             
+            weight.add("trigger", self.triggerSF.get(electron, muon))
         
         sel = Selection(
             dataset = dataset,
@@ -186,21 +188,43 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             alljets = alljets[(alljets.jetId>1)]
             for var in self.variations:
                 # get the collections that change with the variations
-                
-                btag      = getBTagsDeepFlavB(jet, year=self.year) # should study working point for DeepJet
-                weight = Weights( len(ev) )
-                weight.add("weight", ev.weight*cfg['lumi'][self.year])
-                weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
-                if var=='centralUp':
-                    weight.add("btag", self.btagSF.testMethod1a(btag, light, b_direction='central', c_direction='up'))
-                elif var=='centralDown':
-                    weight.add("btag", self.btagSF.testMethod1a(btag, light, b_direction='central', c_direction='down'))
-                elif var=='upCentral':
-                    weight.add("btag", self.btagSF.testMethod1a(btag, light, b_direction='up', c_direction='central'))
-                elif var=='downCentral':
-                    weight.add("btag", self.btagSF.testMethod1a(btag, light, b_direction='down', c_direction='central'))
+                if var=='pt_jesTotalDown' or var=='pt_jesTotalUp':
+                    # get the collections that change with the variations
+                    jet = getPtEtaPhi(alljets, pt_var=var)
+                    jet = jet[(jet.pt>25)]
+                    jet = jet[~match(jet, muon, deltaRCut=0.4)] # remove jets that overlap with muons
+                    jet = jet[~match(jet, electron, deltaRCut=0.4)] # remove jets that overlap with electrons
+
+                    central   = jet[(abs(jet.eta)<2.4)]
+                    btag      = getBTagsDeepFlavB(jet, year=self.year) # should study working point for DeepJet
+                    light     = getBTagsDeepFlavB(jet, year=self.year, invert=True)
+                    fwd       = getFwdJet(light)
+                    fwd_noPU  = getFwdJet(light, puId=False)
                     
-                weight.add("lepton", self.leptonSF.get(electron, muon))
+                    ## forward jets
+                    high_p_fwd   = fwd[ak.singletons(ak.argmax(fwd.p, axis=1))] # highest momentum spectator
+                    high_pt_fwd  = fwd[ak.singletons(ak.argmax(fwd.pt, axis=1))]  # highest transverse momentum spectator
+                    high_eta_fwd = fwd[ak.singletons(ak.argmax(abs(fwd.eta), axis=1))] # most forward spectator
+        
+                    ## Get the two leading b-jets in terms of btag score
+                    high_score_btag = central[ak.argsort(central.btagDeepFlavB)][:,:2]
+                else:
+                    btag      = getBTagsDeepFlavB(jet, year=self.year) # should study working point for DeepJet
+                    weight = Weights( len(ev) )
+                    weight.add("weight", ev.weight*cfg['lumi'][self.year])
+                    weight.add("PU", ev.puWeight, weightUp=ev.puWeightUp, weightDown=ev.puWeightDown, shift=False)
+                    if var=='centralUp':
+                        weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='central', c_direction='up'))
+                    elif var=='centralDown':
+                        weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='central', c_direction='down'))
+                    elif var=='upCentral':
+                        weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='up', c_direction='central'))
+                    elif var=='downCentral':
+                        weight.add("btag", self.btagSF.Method1a(btag, light, b_direction='down', c_direction='central'))
+                    
+                    weight.add("lepton", self.leptonSF.get(electron, muon))
+                    weight.add("trigger", self.triggerSF.get(electron, muon))
+                
                 met = ev.MET
                 sel = Selection(
                     dataset = dataset,
@@ -258,9 +282,9 @@ if __name__ == '__main__':
         #'topW_v3': fileset_all['topW_v3'],
         #'ttbar': fileset_all['ttbar2l'], # dilepton ttbar should be enough for this study.
         'ttbar': fileset_all['top'], # dilepton ttbar should be enough for this study.
-        'MuonEG': fileset_all['MuonEG_Run2018'],
-        'DoubleMuon': fileset_all['DoubleMuon_Run2018'],
-        'EGamma': fileset_all['EGamma_Run2018'],
+        'MuonEG': fileset_all['MuonEG'],
+        'DoubleMuon': fileset_all['DoubleMuon'],
+        'EGamma': fileset_all['EGamma'],
         'diboson': fileset_all['diboson'],
         'TTXnoW': fileset_all['TTXnoW'],
         'TTW': fileset_all['TTW'],
@@ -327,7 +351,7 @@ if __name__ == '__main__':
         output = processor.run_uproot_job(
             fileset,
             "Events",
-            forwardJetAnalyzer(year=year, variations=['centralUp', 'centralDown', 'upCentral', 'downCentral'], accumulator=desired_output),  # not using variations now
+            forwardJetAnalyzer(year=year, variations=['centralUp', 'centralDown', 'upCentral', 'downCentral', 'pt_jesTotalDown', 'pt_jesTotalUp'], accumulator=desired_output),  # not using variations now
             exe,
             exe_args,
             chunksize=250000,

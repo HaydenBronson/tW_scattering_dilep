@@ -69,13 +69,15 @@ groups_UL = {
     'topW_NLO':     ['/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_v7/'],
     'topW_EFT':     ['/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL18_v7/'],
     # careful - TTX is a sum of all TTX but TTW
-    'TTXnoW':        ['/TTZToLLNuNu[-_]', '/TWZToLL[-_]', '/TH[W,Q][-_]', '/TT[T,W,Z][T,W,Z][-_]', '/tZq[-_]', '/ttHToNonbb[-_]'],
+    'TTXnoW':        ['/TTZToLLNuNu[-_]', '/TWZToLL[-_]', '/TH[W,Q][-_]', '/TT[T,W,Z][T,W,Z][-_]', '/tZq[-_]', '/ttHJetToNonbb[-_]'],
     'TTW':           ['/TTWJets'],
     'TTH':           ['/TH[W,Q][-_]', '/ttHJetToNonbb[-_]'],
     'TTZ':           ['/TTZToLLNuNu[-_]', '/TWZToLL[-_]', '/tZq[-_]', '/TT[W,Z][W,Z][-_]'],
     'TTTT':          ['/TTTT[-_]'],
     'top':           ['/TTTo2L2Nu', '/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
     'top1l':         ['/TTToSemiLeptonic', '/ST_[s,t]-channel', '/ST_tW[-_]'],
+    'ttbar1l':       ['/TTToSemiLeptonic'],
+    'ttbar2l':       ['/TTTo2L2Nu'],
     'top2l':         ['/TTTo2L2Nu', '/ST_t-channel', '/ST_tW[-_]'],
     'wjets':         ['/W[1-4]JetsToLNu[-_]'],
     'diboson':       ['/WZTo', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]', '/WpWp*'],
@@ -85,12 +87,9 @@ groups_UL = {
     'WZ':            ['/WZTo.*amcatnloFXFX'], # there's also a powheg sample
     'DY':            ['/DYJetsToLL'],
 
-    'MuonEG_Run2018':       ['/MuonEG'],
-    'EGamma_Run2018':       ['/EGamma'],
-    'DoubleMuon_Run2018':   ['/DoubleMuon'],
-
     'MuonEG':       ['/MuonEG'],
     'DoubleEG':     ['/DoubleEG'],
+    'EGamma':       ['/EGamma', '/DoubleEG',],
     'DoubleMuon':   ['/DoubleMuon'],
 }
 
@@ -152,3 +151,5 @@ def get_babies(data_path, small=False, year=2018):
         return { sample: fileset[sample][:2] for sample in fileset.keys() }
     else:
         return fileset
+
+

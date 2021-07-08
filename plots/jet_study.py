@@ -28,7 +28,7 @@ if __name__ == '__main__':
     small = False
     cfg = loadConfig()
 
-    plot_dir = os.path.expandvars(cfg['meta']['plots']) + '/N_b/' + 'dilep'
+    plot_dir = os.path.expandvars(cfg['meta']['plots']) + 'test' + '/N_b/' + 'dilep'
     
     cacheName = 'forward_dilep_2018_Nb'
     if small: cacheName += '_small'
@@ -95,10 +95,64 @@ if __name__ == '__main__':
         bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{b-tag}$',
         new_colors=my_colors, new_labels=my_labels,
         order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+#        upHists=['centralUp', 'upCentral'], downHists=['centralDown', 'downCentral'],
+        shape=False,
+        save=os.path.expandvars(plot_dir+version_dir+'N_b_noUncertanties'),
+        )
+    makePlot(output, 'N_b', 'multiplicity',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{b-tag}$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
         upHists=['centralUp', 'upCentral'], downHists=['centralDown', 'downCentral'],
         shape=False,
-        save=os.path.expandvars(plot_dir+version_dir+'N_b'),
+        save=os.path.expandvars(plot_dir+version_dir+'N_b_btagSF'),
         )
+    makePlot(output, 'N_b', 'multiplicity',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{b-tag}$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        upHists=['pt_jesTotalUp'], downHists=['pt_jesTotalDown'],
+        shape=False,
+        save=os.path.expandvars(plot_dir+version_dir+'N_b_JES'),
+        )
+    makePlot(output, 'N_b', 'multiplicity',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{b-tag}$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+        upHists=['centralUp', 'upCentral', 'pt_jesTotalUp'], downHists=['centralDown', 'downCentral', 'pt_jesTotalDown'],
+        shape=False,
+        save=os.path.expandvars(plot_dir+version_dir+'N_b_JES&btagSF'),
+        )
+    '''makePlot(output, 'N_b', 'multiplicity',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{b-tag}$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+#        upHists=['centralUp', 'upCentral'], downHists=['centralDown', 'downCentral'],
+        shape=False,
+        save=os.path.expandvars(plot_dir+version_dir+'N_b_noUncertanties'),
+        )
+    makePlot(output, 'N_b', 'multiplicity',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{b-tag}$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+#        upHists=['centralUp', 'upCentral'], downHists=['centralDown', 'downCentral'],
+        shape=False,
+        save=os.path.expandvars(plot_dir+version_dir+'N_b_noUncertanties'),
+        )
+    makePlot(output, 'N_b', 'multiplicity',
+        data=['DoubleMuon', 'MuonEG', 'EGamma'],
+        bins=N_bins_red, log=False, normalize=TFnormalize, axis_label=r'$N_{b-tag}$',
+        new_colors=my_colors, new_labels=my_labels,
+        order=['topW_v3', 'diboson', 'TTW', 'TTXnoW', 'DY', 'ttbar'],
+#        upHists=['centralUp', 'upCentral'], downHists=['centralDown', 'downCentral'],
+        shape=False,
+        save=os.path.expandvars(plot_dir+version_dir+'N_b_noUncertanties'),
+        )'''
     
     
     

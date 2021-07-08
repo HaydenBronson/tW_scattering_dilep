@@ -15,6 +15,7 @@ from Tools.cutflow import *
 from Tools.config_helpers import loadConfig, make_small
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
+from Tools.trigger_scalefactors import *
 from Tools.ttH_lepton_scalefactors import *
 from Tools.selections import Selection
 
@@ -37,6 +38,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         self.btagSF = btag_scalefactor(year)
         
         self.leptonSF = LeptonSF(year=year)
+        
+        self.triggerSF = triggerSF(year=year)
         
         self._accumulator = processor.dict_accumulator( accumulator )
 
@@ -157,7 +160,9 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             
             # lepton SFs
             weight.add("lepton", self.leptonSF.get(electron, muon))
-        
+            
+            weight.add("trigger", self.triggerSF.get(electron, muon))
+            
         
         cutflow     = Cutflow(output, ev, weight=weight)
 
@@ -177,6 +182,9 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         )
 
         BL = sel.dilep_baseline(cutflow=cutflow, SS=False)
+        BL_diele = ( BL & (ak.num(electron, axis=1)==2) )
+        BL_1ele = ( BL & (ak.num(electron, axis=1)==1) )
+        BL_0ele = ( BL & (ak.num(electron, axis=1)==0) )
         
         # first, make a few super inclusive plots
         output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight.weight()[BL])
@@ -196,8 +204,10 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         BL_minusFwd = sel.dilep_baseline(SS=False, omit=['N_fwd>0'])
         output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL_minusFwd], weight=weight.weight()[BL_minusFwd])
         
-        output['dilep_pt'].fill(dataset=dataset, pt=ak.flatten(dilepton_pt[BL]), weight=weight.weight()[BL])
+        output['dilep_pt'].fill(dataset=dataset, pt=ak.flatten(dilepton_pt[BL_minusNb]), weight=weight.weight()[BL_minusNb])
+        
         output['dilep_mass'].fill(dataset=dataset, mass=ak.flatten(dilepton_mass[BL]), weight=weight.weight()[BL])
+        
         output['mjf_max'].fill(dataset=dataset, mass=mjf_max[BL], weight=weight.weight()[BL])
         output['deltaEta'].fill(dataset=dataset, eta=ak.flatten(deltaEta[BL]), weight=weight.weight()[BL])
         output['min_bl_dR'].fill(dataset=dataset, eta=min_bl_dR[BL], weight=weight.weight()[BL])
@@ -253,6 +263,60 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             phi = ak.to_numpy(ak.flatten(trailing_lepton[BL].phi)),
             weight = weight.weight()[BL]
         )
+        
+        BL_diele = ( BL & (ak.num(electron, axis=1)==2) )
+               
+        output['lead_lep_2ele'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(leading_lepton[BL_diele].pt)),
+            eta = ak.to_numpy(ak.flatten(leading_lepton[BL_diele].eta)),
+            phi = ak.to_numpy(ak.flatten(leading_lepton[BL_diele].phi)),
+            weight = weight.weight()[BL_diele]
+        )
+        
+        output['trail_lep_2ele'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL_diele].pt)),
+            eta = ak.to_numpy(ak.flatten(trailing_lepton[BL_diele].eta)),
+            phi = ak.to_numpy(ak.flatten(trailing_lepton[BL_diele].phi)),
+            weight = weight.weight()[BL_diele]
+        )
+        
+        BL_muon = ( BL & (ak.num(muon, axis=1)==2) )
+        output['lead_lep_2mu'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(leading_lepton[BL_muon].pt)),
+            eta = ak.to_numpy(ak.flatten(leading_lepton[BL_muon].eta)),
+            phi = ak.to_numpy(ak.flatten(leading_lepton[BL_muon].phi)),
+            weight = weight.weight()[BL_muon]
+        )
+        
+        output['trail_lep_2mu'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL_muon].pt)),
+            eta = ak.to_numpy(ak.flatten(trailing_lepton[BL_muon].eta)),
+            phi = ak.to_numpy(ak.flatten(trailing_lepton[BL_muon].phi)),
+            weight = weight.weight()[BL_muon]
+        )
+        
+        BL_elemu = ( BL & (ak.num(muon, axis=1)==1) & (ak.num(electron, axis=1)==1) )
+        output['lead_lep_elemu'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(leading_lepton[BL_elemu].pt)),
+            eta = ak.to_numpy(ak.flatten(leading_lepton[BL_elemu].eta)),
+            phi = ak.to_numpy(ak.flatten(leading_lepton[BL_elemu].phi)),
+            weight = weight.weight()[BL_elemu]
+        )
+        
+        output['trail_lep_elemu'].fill(
+            dataset = dataset,
+            pt  = ak.to_numpy(ak.flatten(trailing_lepton[BL_elemu].pt)),
+            eta = ak.to_numpy(ak.flatten(trailing_lepton[BL_elemu].eta)),
+            phi = ak.to_numpy(ak.flatten(trailing_lepton[BL_elemu].phi)),
+            weight = weight.weight()[BL_elemu]
+        )
+        
+        
         
         output['fwd_jet'].fill(
             dataset = dataset,
@@ -427,18 +491,18 @@ if __name__ == '__main__':
     from Tools.helpers import mt
 
     overwrite = True
-    year = 2018
+    year = 2017
     local = True
     small = False
-
+            
     # load the config and the cache
     cfg = loadConfig()
     
-    cacheName = 'forward'
+    cacheName = 'forward_2017'
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
-    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.3_dilep/', year='UL2018')
+    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.3_dilep/', year='UL2017')
     
     fileset = {
         #'tW_scattering': fileset_all['tW_scattering'],
@@ -446,9 +510,9 @@ if __name__ == '__main__':
         #'topW_v3': fileset_all['topW_v3'],
         #'ttbar': fileset_all['ttbar2l'], # dilepton ttbar should be enough for this study.
         'ttbar': fileset_all['top'], # dilepton ttbar should be enough for this study.
-        'MuonEG': fileset_all['MuonEG_Run2018'],
-        'DoubleMuon': fileset_all['DoubleMuon_Run2018'],
-        'EGamma': fileset_all['EGamma_Run2018'],
+        'MuonEG': fileset_all['MuonEG'],
+        'DoubleMuon': fileset_all['DoubleMuon'],
+        'EGamma': fileset_all['EGamma'],
         'diboson': fileset_all['diboson'],
         'TTXnoW': fileset_all['TTXnoW'],
         'TTW': fileset_all['TTW'],
@@ -481,7 +545,13 @@ if __name__ == '__main__':
                 "subleading_btag_pt": hist.Hist("Counts", dataset_axis, pt_axis),
                 "leading_btag_eta": hist.Hist("Counts", dataset_axis, eta_axis),
                 "subleading_btag_eta": hist.Hist("Counts", dataset_axis, eta_axis),
-            
+                "lead_lep_2ele":           hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "trail_lep_2ele":          hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "lead_lep_2mu":           hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "trail_lep_2mu":          hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "lead_lep_elemu":           hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                "trail_lep_elemu":          hist.Hist("Counts", dataset_axis, pt_axis, eta_axis, phi_axis),
+                
              })
 
     histograms = sorted(list(desired_output.keys()))

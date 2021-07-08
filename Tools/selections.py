@@ -41,6 +41,7 @@ class Selection:
         dimu    = choose(self.mu, 2)
         diele   = choose(self.ele, 2)
         dilep   = cross(self.mu, self.ele)
+        
 
         if SS:
             is_SS = ( ak.any((dimu['0'].charge * dimu['1'].charge)>0, axis=1) | \
@@ -56,6 +57,7 @@ class Selection:
             ak.pad_none(
                 lepton[ak.argsort(lepton.pt, ascending=False)].pdgId, 2, clip=True),
         0)
+        
 
         triggers  = getTriggers(self.events,
             ak.flatten(lepton_pdgId_pt_ordered[:,0:1]),
@@ -63,6 +65,8 @@ class Selection:
 
         ht = ak.sum(self.jet_all.pt, axis=1)
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)
+        dilep = choose(lepton,2)
+        min_mll = ak.all(dilep.mass>12, axis=1)
 
         self.selection.add('lepveto',       lepveto)
         self.selection.add('dilep',         is_dilep)
@@ -83,6 +87,7 @@ class Selection:
         self.selection.add('MET>30',        (self.met.pt>30) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st>600) )
+        self.selection.add('min_mll',        (min_mll) )
 
         ss_reqs = [
             'filter',
@@ -97,6 +102,7 @@ class Selection:
             'N_btag>0',
             'MET>30',
             'N_fwd>0',
+            'min_mll'
         ]
         
         if tight:

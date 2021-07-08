@@ -496,9 +496,9 @@ if __name__ == '__main__':
         #'topW_v3': fileset_all['topW_v3'],
         #'ttbar': fileset_all['ttbar2l'], # dilepton ttbar should be enough for this study.
         'ttbar': fileset_all['top'], # dilepton ttbar should be enough for this study.
-        'MuonEG': fileset_all['MuonEG_Run2018'],
-        'DoubleMuon': fileset_all['DoubleMuon_Run2018'],
-        'EGamma': fileset_all['EGamma_Run2018'],
+        'MuonEG': fileset_all['MuonEG'],
+        'DoubleMuon': fileset_all['DoubleMuon'],
+        'EGamma': fileset_all['EGamma'], #DoubleEG for 2017, EGamma for 2018
         'diboson': fileset_all['diboson'],
         'TTXnoW': fileset_all['TTXnoW'],
         'TTW': fileset_all['TTW'],

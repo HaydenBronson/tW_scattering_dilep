@@ -12,7 +12,7 @@ import numpy as np
 from Tools.objects import *
 from Tools.basic_objects import *
 from Tools.cutflow import *
-from Tools.config_helpers import loadConfig, make_small
+from Tools.config_helpers import loadConfig, make_small, data_pattern #,  zip_run_lumi_event
 from Tools.triggers import *
 from Tools.btag_scalefactors import *
 from Tools.ttH_lepton_scalefactors import *
@@ -22,17 +22,12 @@ from Tools.helpers import mt
 import warnings
 warnings.filterwarnings("ignore")
 
-def zip_rle(output, dataset):
-    return ak.to_numpy(
-        ak.zip([
-            output['%s_run'%dataset].value.astype(int),
-            output['%s_lumi'%dataset].value.astype(int),
-            output['%s_event'%dataset].value.astype(int),
-            ]))
+
 
 class forwardJetAnalyzer(processor.ProcessorABC):
-    def __init__(self, year=2016, variations=[], accumulator={}):
+    def __init__(self, year=2016, variations=[], accumulator={}, evaluate=False, training='v8', dump=False, era=None):
         self.variations = variations
+        self.era = era
         self.year = year
         
         self.btagSF = btag_scalefactor(year)
@@ -113,7 +108,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         
         jf          = cross(high_p_fwd, jet)
         mjf         = (jf['0']+jf['1']).mass
-        deltaEta    = abs(high_p_fwd.eta - jf[ak.singletons(ak.argmax(mjf, axis=1))]['1'].eta)
+        #deltaEta    = abs(high_p_fwd.eta - jf[ak.singletons(ak.argmax(mjf, axis=1))]['1'].eta)
+        deltaEta   = abs(jf['0'].eta - jf['1'].eta)
         deltaEtaMax = ak.max(deltaEta, axis=1)
         mjf_max     = ak.max(mjf, axis=1)
         
@@ -130,8 +126,10 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         lt = met_pt + ak.sum(muon.pt, axis=1) + ak.sum(electron.pt, axis=1)
         ht_central = ak.sum(central.pt, axis=1)
         
-        tau       = getTaus(ev)
         track     = getIsoTracks(ev)
+        tau       = getTaus(ev)
+        tau       = tau[~match(tau, muon, deltaRCut=0.4)] 
+        tau       = tau[~match(tau, electron, deltaRCut=0.4)]
         
         bl          = cross(lepton, high_score_btag)
         bl_dR       = delta_r(bl['0'], bl['1'])
@@ -140,12 +138,13 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         mt_lep_met = mt(lepton.pt, lepton.phi, ev.MET.pt, ev.MET.phi)
         min_mt_lep_met = ak.min(mt_lep_met, axis=1)
         dilepton_dR = delta_r(leading_lepton, trailing_lepton)
-       
+        
+               
         
         # define the weight
         weight = Weights( len(ev) )
         
-        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        if not re.search(data_pattern, dataset):
             # lumi weight
             weight.add("weight", ev.weight*cfg['lumi'][self.year])
             
@@ -155,8 +154,15 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             # b-tag SFs
             weight.add("btag", self.btagSF.Method1a(btag, light))
             
-            # lepton SFs
+           # lepton SFs
             weight.add("lepton", self.leptonSF.get(electron, muon))
+            
+        if not re.search(data_pattern, dataset):
+            gen = ev.GenPart
+            gen_photon = gen[gen.pdgId==22]
+            external_conversions = external_conversion(lepton, gen_photon)
+            conversion_veto = ((ak.num(external_conversions))==0)
+            conversion_req = ((ak.num(external_conversions))>0)
         
         
         cutflow     = Cutflow(output, ev, weight=weight)
@@ -175,15 +181,29 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             jet_fwd = fwd,
             met = ev.MET,
         )
-
-        BL = sel.trilep_baseline(cutflow=cutflow)
+        
+#        BL = sel.trilep_baseline(cutflow=cutflow)
+        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0', 'SFOS>1'])
+        
+        if dataset=='XG':
+            BL = (BL & conversion_req)
+        elif dataset=='ttbar' or dataset=='DY':
+            BL = (BL & conversion_veto)
+            
         
         # first, make a few super inclusive plots
         output['PV_npvs'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvs, weight=weight.weight()[BL])
         output['PV_npvsGood'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvsGood, weight=weight.weight()[BL])
         output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight.weight()[BL])
-
-        BL_minusNb = sel.trilep_baseline(omit=['N_btag>0'])
+        
+#        BL_minusNb = sel.trilep_baseline(omit=['N_btag>0']) 
+        BL_minusNb = sel.trilep_baseline(omit=['N_btag>0','N_fwd>0', 'N_central>0','SFOS>1'])   
+          
+        if dataset=='XG':
+            BL_minusNb = (BL_minusNb & conversion_req)
+        elif dataset=='ttbar' or dataset=='DY':
+            BL_minusNb = (BL_minusNb & conversion_veto)
+            
         output['N_b'].fill(dataset=dataset, multiplicity=ak.num(btag)[BL_minusNb], weight=weight.weight()[BL_minusNb])
 
         output['N_central'].fill(dataset=dataset, multiplicity=ak.num(central)[BL], weight=weight.weight()[BL])
@@ -195,8 +215,9 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['LT'].fill(dataset=dataset, ht=lt[BL], weight=weight.weight()[BL])
         
         vetolepton   = ak.concatenate([vetomuon, vetoelectron], axis=1)    
-        trilep = choose3(vetolepton, 3)
-        trilep_m = trilep.mass
+        trilep = choose3(lepton, 3)
+        #trilep_m = trilep.mass
+        trilep_m = ak.max(trilep.mass, axis=1)
         
         dimu_veto = choose(vetomuon,2)
         diele_veto = choose(vetoelectron,2) 
@@ -206,44 +227,107 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         OS_dimuon_bestZmumu = OS_dimu_veto[ak.singletons(ak.argmin(abs(OS_dimu_veto.mass-91.2), axis=1))]
         OS_dielectron_bestZee = OS_diele_veto[ak.singletons(ak.argmin(abs(OS_diele_veto.mass-91.2), axis=1))]
         OS_dilepton_mass = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimuon_bestZmumu.mass, OS_dielectron_bestZee.mass], axis=1), 1, clip=True), -1)
+        
         OS_dilepton_pt = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimuon_bestZmumu.pt, OS_dielectron_bestZee.pt], axis=1), 1, clip=True), -1)
         
-        #OS_dimuon_min = OS_dimu_veto[ak.argmin(OS_dimu_veto.mass, axis=1)]
-        #OS_dielectron_min = OS_diele_veto[ak.argmin(OS_diele_veto.mass, axis=1)]
-        #SFOS_min = ak.concatenate([OS_dielectron_min, OS_dimuon_min], axis=1)
-        #SFOS_min = ak.fill_none(SFOS_min.mass, 0)
-        #output['min_mass_SFOS'].fill(dataset=dataset, mass=(SFOS_min[BL]), weight=weight.weight()[BL])
+        OS_dilepton_all_mass = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimu_veto.mass, OS_diele_veto.mass], axis=1), 1, clip=True), -1)
         
-        OS_min_mass = ak.min(ak.concatenate([OS_dimu_veto.mass, OS_diele_veto.mass], axis=1), axis=1)
-        OS_min_mass = ak.fill_none(OS_min_mass, 0)
+        SFOS = ak.concatenate([OS_diele_veto, OS_dimu_veto], axis=1)
+        OS_dimu_veto2 = OS_dimu_veto[ak.num(SFOS)>1]
+        OS_diele_veto2 = OS_diele_veto[ak.num(SFOS)>1]
+        OS_dimuon_worstZmumu = OS_dimu_veto[ak.singletons(ak.argmax(abs(OS_dimu_veto.mass-91.2), axis=1))]
+        OS_dielectron_worstZee = OS_diele_veto[ak.singletons(ak.argmax(abs(OS_diele_veto.mass-91.2), axis=1))]
+        OS_dilepton_worst_mass = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimuon_worstZmumu.mass, OS_dielectron_worstZee.mass], axis=1), 1, clip=True), -1) 
+        
+        OS_min_mass = ak.fill_none(ak.min(ak.concatenate([OS_dimu_veto.mass, OS_diele_veto.mass], axis=1), axis=1),0)
         output['min_mass_SFOS'].fill(dataset=dataset, mass=(OS_min_mass[BL]), weight=weight.weight()[BL])
+
+#        BL_omitOffZ = sel.trilep_baseline(omit=['offZ'])
+#        BL_omitOnZ = sel.trilep_baseline(omit=['m3l_onZ'])
+        BL_omitOffZ = sel.trilep_baseline(omit=['offZ','SFOS>1'])
+        BL_omitOnZ = sel.trilep_baseline(omit=['m3l_onZ','SFOS>1'])
+
+        if dataset=='XG':
+            BL_omitOffZ = (BL_omitOffZ & conversion_req)
+        elif dataset=='ttbar' or dataset=='DY':
+            BL_omitOffZ = (BL_omitOffZ & conversion_veto)
+            
+        if dataset=='XG':
+            BL_omitOnZ = (BL_omitOnZ & conversion_req)
+        elif dataset=='ttbar' or dataset=='DY':
+            BL_omitOnZ = (BL_omitOnZ & conversion_veto)
         
         output['onZ_pt'].fill(dataset=dataset, pt=ak.flatten(OS_dilepton_pt[BL]), weight=weight.weight()[BL])
-        output['M3l'].fill(dataset=dataset, mass=ak.flatten(trilep_m[BL]), weight=weight.weight()[BL])
-        output['M_ll'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_mass[BL]), weight=weight.weight()[BL])
+        output['M3l'].fill(dataset=dataset, mass=(trilep_m[BL]), weight=weight.weight()[BL])
+        output['M_ll'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_mass[BL_omitOffZ]), weight=weight.weight()[BL_omitOffZ])
+        #output['M_ll_all'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_all_mass[BL_omitOffZ]), weight=weight.weight()[BL_omitOffZ])
+        
+        BL_omitOffZ = sel.trilep_baseline(omit=['offZ'])
+        if dataset=='XG':
+            BL_omitOffZ = (BL_omitOffZ & conversion_req)
+        elif dataset=='ttbar' or dataset=='DY':
+            BL_omitOffZ = (BL_omitOffZ & conversion_veto)
+        
+        #output['M_ll_worst'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_worst_mass[BL_omitOffZ]), weight=weight.weight()[BL_omitOffZ])
 
         output['N_tau'].fill(dataset=dataset, multiplicity=ak.num(tau)[BL], weight=weight.weight()[BL])
         output['N_track'].fill(dataset=dataset, multiplicity=ak.num(track)[BL], weight=weight.weight()[BL])
         
+#        BL = sel.trilep_baseline(cutflow=cutflow)
+        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_central>0','SFOS>1'])
+        if dataset=='XG':
+            BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_central>0','SFOS>1'])
+        elif dataset=='ttbar' or dataset=='DY':
+            BL = (BL & conversion_veto)
+        
         output['mjf_max'].fill(dataset=dataset, mass=mjf_max[BL], weight=weight.weight()[BL])
-        output['deltaEta'].fill(dataset=dataset, eta=ak.flatten(deltaEta[BL]), weight=weight.weight()[BL])
+        #output['deltaEta'].fill(dataset=dataset, eta=ak.flatten(deltaEta[BL]), weight=weight.weight()[BL])
+        
+#        BL = sel.trilep_baseline(cutflow=cutflow)
+        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0','SFOS>1'])
+        if dataset=='XG':
+            BL = (BL & conversion_req)
+        elif dataset=='ttbar' or dataset=='DY':
+            BL = (BL & conversion_veto)
+        
         output['min_bl_dR'].fill(dataset=dataset, eta=min_bl_dR[BL], weight=weight.weight()[BL])
         output['min_mt_lep_met'].fill(dataset=dataset, pt=min_mt_lep_met[BL], weight=weight.weight()[BL])
         
+#        BL = sel.trilep_baseline(cutflow=cutflow)
+        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+        if dataset=='XG':
+            BL = (BL & conversion_req)
+        elif dataset=='ttbar' or dataset=='DY':
+            BL = (BL & conversion_veto)
+            
         output['leading_jet_pt'].fill(dataset=dataset, pt=ak.flatten(jet[:, 0:1][BL].pt), weight=weight.weight()[BL])
-        output['subleading_jet_pt'].fill(dataset=dataset, pt=ak.flatten(jet[:, 1:2][BL].pt), weight=weight.weight()[BL])
+        
         output['leading_jet_eta'].fill(dataset=dataset, eta=ak.flatten(jet[:, 0:1][BL].eta), weight=weight.weight()[BL])
+        '''
+        output['subleading_jet_pt'].fill(dataset=dataset, pt=ak.flatten(jet[:, 1:2][BL].pt), weight=weight.weight()[BL])
         output['subleading_jet_eta'].fill(dataset=dataset, eta=ak.flatten(jet[:, 1:2][BL].eta), weight=weight.weight()[BL])
         
         output['leading_btag_pt'].fill(dataset=dataset, pt=ak.flatten(high_score_btag[:, 0:1][BL].pt), weight=weight.weight()[BL])
         output['subleading_btag_pt'].fill(dataset=dataset, pt=ak.flatten(high_score_btag[:, 1:2][BL].pt), weight=weight.weight()[BL])
         output['leading_btag_eta'].fill(dataset=dataset, eta=ak.flatten(high_score_btag[:, 0:1][BL].eta), weight=weight.weight()[BL])
         output['subleading_btag_eta'].fill(dataset=dataset, eta=ak.flatten(high_score_btag[:, 1:2][BL].eta), weight=weight.weight()[BL])
+        '''        
+#        BL_minusFwd = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0'])
+        BL_minusFwd = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+        if dataset=='XG':
+            BL_minusFwd = (BL_minusFwd & conversion_req)
+        elif dataset=='ttbar' or dataset=='DY':
+            BL_minusFwd = (BL_minusFwd & conversion_veto)
         
-        BL_minusFwd = sel.trilep_baseline(omit=['N_fwd>0'])
         output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL_minusFwd], weight=weight.weight()[BL_minusFwd])
         
-        BL_minusMET = sel.trilep_baseline(omit=['MET>50'])
+#        BL_minusMET = sel.trilep_baseline(cutflow=cutflow, omit=['MET>50'])
+        BL_minusMET = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+        if dataset=='XG':
+            BL_minusMET = (BL_minusMET & conversion_req)
+        elif dataset=='ttbar' or dataset=='DY':
+            BL_minusMET = (BL_minusMET & conversion_veto)
+            
         output['MET'].fill(
             dataset = dataset,
             pt  = ev.MET[BL_minusMET].pt,
@@ -290,7 +374,13 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             phi = ak.to_numpy(ak.flatten(second_lepton[BL].phi)),
             weight = weight.weight()[BL]
         )
-        
+#        BL = sel.trilep_baseline(cutflow=cutflow)
+        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_central>0','SFOS>1'])
+        if dataset=='XG':
+            BL = (BL & conversion_req)
+        elif dataset=='ttbar' or dataset=='DY':
+            BL = (BL & conversion_veto)
+            
         output['fwd_jet'].fill(
             dataset = dataset,
             pt  = ak.flatten(high_p_fwd[BL].pt_nom),
@@ -298,7 +388,13 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             phi = ak.flatten(high_p_fwd[BL].phi),
             weight = weight.weight()[BL]
         )
-        
+#        BL = sel.trilep_baseline(cutflow=cutflow)
+        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+        if dataset=='XG':
+            BL = (BL & conversion_req)
+        elif dataset=='ttbar' or dataset=='DY':
+            BL = (BL & conversion_veto)
+        '''        
         output['b1'].fill(
             dataset = dataset,
             pt  = ak.flatten(high_score_btag[:, 0:1][BL].pt_nom),
@@ -314,7 +410,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             phi = ak.flatten(high_score_btag[:, 1:2][BL].phi),
             weight = weight.weight()[BL]
         )
-        
+        '''
         output['j1'].fill(
             dataset = dataset,
             pt  = ak.flatten(jet.pt_nom[:, 0:1][BL]),
@@ -322,7 +418,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             phi = ak.flatten(jet.phi[:, 0:1][BL]),
             weight = weight.weight()[BL]
         )
-        
+        '''
         output['j2'].fill(
             dataset = dataset,
             pt  = ak.flatten(jet[:, 1:2][BL].pt_nom),
@@ -338,8 +434,9 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             phi = ak.flatten(jet[:, 2:3][BL].phi),
             weight = weight.weight()[BL]
         )
+        '''
 
-        if re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        if re.search(data_pattern, dataset):
             #rle = ak.to_numpy(ak.zip([ev.run, ev.luminosityBlock, ev.event]))
             run_ = ak.to_numpy(ev.run)
             lumi_ = ak.to_numpy(ev.luminosityBlock)
@@ -349,7 +446,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             output['%s_event'%dataset] += processor.column_accumulator(event_[BL])
         
         # Now, take care of systematic unceratinties
-        if not re.search(re.compile('MuonEG|DoubleMuon|DoubleEG|EGamma'), dataset):
+        if not re.search(data_pattern, dataset):
             alljets = getJets(ev, minPt=0, maxEta=4.7)
             alljets = alljets[(alljets.jetId>1)]
             for var in self.variations:
@@ -391,7 +488,12 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     met = met,
                 )
 
-                BL = sel.trilep_baseline()
+#                BL = sel.trilep_baseline(cutflow=cutflow)
+                BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+                if dataset=='XG':
+                    BL = (BL & conversion_req)
+                elif dataset=='ttbar' or dataset=='DY':
+                    BL = (BL & conversion_veto)
 
                 # get the modified selection -> more difficult
                 #selection.add('N_jet>2_'+var, (ak.num(jet.pt)>=3)) # stupid bug here...
@@ -407,9 +509,21 @@ class forwardJetAnalyzer(processor.ProcessorABC):
 
                 # the OS selection remains unchanged
                 output['N_jet_'+var].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight.weight()[BL])
-                BL_minusFwd = sel.trilep_baseline(omit=['N_fwd>0'])
+                                 
+#                BL_minusFwd = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0'])
+                BL_minusFwd = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+                if dataset=='XG':
+                    BL_minusFwd = (BL_minusFwd & conversion_req)
+                elif dataset=='ttbar' or dataset=='DY':
+                    BL_minusFwd = (BL_minusFwd & conversion_veto)
+                
                 output['N_fwd_'+var].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL_minusFwd], weight=weight.weight()[BL_minusFwd])
                 BL_minusNb = sel.trilep_baseline(omit=['N_btag>0'])
+                if dataset=='XG':
+                    BL_minusNb = (BL_minusNb & conversion_req)
+                elif dataset=='ttbar' or dataset=='DY':
+                    BL_minusNb = (BL_minusNb & conversion_veto)
+                    
                 output['N_b_'+var].fill(dataset=dataset, multiplicity=ak.num(btag)[BL_minusNb], weight=weight.weight()[BL_minusNb])
                 output['N_central_'+var].fill(dataset=dataset, multiplicity=ak.num(central)[BL], weight=weight.weight()[BL])
 
@@ -422,6 +536,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     phi = ak.flatten(jet.phi[:, 0:1][BL]),
                     weight = weight.weight()[BL]
                 )
+                '''                                 
                 output['j2_'+var].fill(
                     dataset = dataset,
                     pt  = ak.flatten(jet.pt[:, 0:1][BL]),
@@ -444,6 +559,13 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     phi = ak.flatten(high_score_btag[:, 0:1].phi[:, 0:1][BL]),
                     weight = weight.weight()[BL]
                 )
+                '''
+#                BL = sel.trilep_baseline(cutflow=cutflow)
+                BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_central>0','SFOS>1'])
+                if dataset=='XG':
+                    BL = (BL & conversion_req)
+                elif dataset=='ttbar' or dataset=='DY':
+                    BL = (BL & conversion_veto)
                 
                 output['fwd_jet_'+var].fill(
                     dataset = dataset,
@@ -454,7 +576,13 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     weight = weight.weight()[BL]
                 )
 
-                BL_minusMET = sel.trilep_baseline(omit=['MET>50'])        
+#                BL_minusMET = sel.trilep_baseline(cutflow=cutflow, omit=['MET>50'])
+                BL_minusMET = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+                if dataset=='XG':
+                    BL_minusMET = (BL_minusMET & conversion_req)
+                elif dataset=='ttbar' or dataset=='DY':
+                    BL_minusMET = (BL_minusMET & conversion_veto)
+                    
                 output['MET_'+var].fill(
                     dataset = dataset,
                     #pt  = getattr(ev.MET, var)[BL_minusMET],
@@ -471,39 +599,75 @@ class forwardJetAnalyzer(processor.ProcessorABC):
 
 
 if __name__ == '__main__':
-
+    
     from klepto.archives import dir_archive
-    from Tools.samples import * # fileset_2018 #, fileset_2018_small
+    from Tools.samples import get_babies
     from processor.default_accumulators import *
 
-    overwrite = True
-    year = 2018
-    local = True
-    small = False
+    import argparse
+
+    argParser = argparse.ArgumentParser(description = "Argument parser")
+    argParser.add_argument('--keep', action='store_true', default=None, help="Keep/use existing results??")
+    argParser.add_argument('--dask', action='store_true', default=None, help="Run on a DASK cluster?")
+    argParser.add_argument('--profile', action='store_true', default=None, help="Memory profiling?")
+    argParser.add_argument('--iterative', action='store_true', default=None, help="Run iterative?")
+    argParser.add_argument('--small', action='store_true', default=None, help="Run on a small subset?")
+    argParser.add_argument('--verysmall', action='store_true', default=None, help="Run on a small subset?")
+    argParser.add_argument('--year', action='store', default='2017', help="Which year to run on?")
+    argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
+    argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
+    argParser.add_argument('--dump', action='store_true', default=None, help="Dump a DF for NN training?")
+    argParser.add_argument('--check_double_counting', action='store_true', default=None, help="Check for double counting in data?")
+    args = argParser.parse_args()
+
+    profile     = args.profile
+    iterative   = args.iterative
+    overwrite   = not args.keep
+    small       = args.small
+    verysmall   = args.verysmall
+    
+    #verysmall=True
+    if verysmall:
+        small = True
+    
+    year        = int(args.year[0:4])
+    era         = args.year[4:7]
+    local       = not args.dask
+    save        = True
+
+    if profile:
+        from pympler import muppy, summary
 
     # load the config and the cache
     cfg = loadConfig()
     
-    cacheName = 'forward_trilep_2018'
+    cacheName = 'conv_2017'
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     
-    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.2_trilep/', year='UL2018')
-    
+    in_path = '/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.4.0_trilep/'
+
+    fileset_all = get_babies(in_path, year='UL%s%s'%(year,era))
+   
     fileset = {
         #'tW_scattering': fileset_all['tW_scattering'],
         'topW_v3': fileset_all['topW_NLO'],
         #'topW_v3': fileset_all['topW_v3'],
         #'ttbar': fileset_all['ttbar2l'], # dilepton ttbar should be enough for this study.
         'ttbar': fileset_all['top'], # dilepton ttbar should be enough for this study.
+        
         'MuonEG': fileset_all['MuonEG'],
         'DoubleMuon': fileset_all['DoubleMuon'],
         'EGamma': fileset_all['EGamma'], #DoubleEG for 2017, EGamma for 2018
+        'SingleElectron': fileset_all['SingleElectron'],
+        'SingleMuon': fileset_all['SingleMuon'],
+        
         'diboson': fileset_all['diboson'],
         'TTXnoW': fileset_all['TTXnoW'],
         'TTW': fileset_all['TTW'],
         #'WZ': fileset_all['WZ'],
         'DY': fileset_all['DY'],
+        'XG': fileset_all['XG'],
     }
 
     fileset = make_small(fileset, small, 1)
@@ -514,6 +678,8 @@ if __name__ == '__main__':
                 'MuonEG_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
                 'EGamma_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
                 'DoubleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                'SingleMuon_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
+                'SingleElectron_%s'%rle: processor.column_accumulator(np.zeros(shape=(0,))),
                 "M_ll": hist.Hist("Counts", dataset_axis, mass_axis),
                 "M3l": hist.Hist("Counts", dataset_axis, mass_axis),
                 "ST": hist.Hist("Counts", dataset_axis, ht_axis),
@@ -536,6 +702,8 @@ if __name__ == '__main__':
                 "subleading_btag_pt": hist.Hist("Counts", dataset_axis, pt_axis),
                 "leading_btag_eta": hist.Hist("Counts", dataset_axis, eta_axis),
                 "subleading_btag_eta": hist.Hist("Counts", dataset_axis, eta_axis),
+                "M_ll_worst": hist.Hist("Counts", dataset_axis, mass_axis),
+                "M_ll_all": hist.Hist("Counts", dataset_axis, mass_axis),
             
              })
 
@@ -591,10 +759,11 @@ if __name__ == '__main__':
 
     # this is a check for double counting.
 
-    em = zip_rle(output, 'MuonEG')
-    e = zip_rle(output, 'EGamma')
-    mm = zip_rle(output, 'DoubleMuon')
-
+    '''
+    em = zip_run_lumi_event(output, 'MuonEG')
+    e  = zip_run_lumi_event(output, 'EGamma')
+    mm = zip_run_lumi_event(output, 'DoubleMuon')
+    
     print ("Total events from MuonEG:", len(em))
     print ("Total events from EGamma:", len(e))
     print ("Total events from DoubleMuon:", len(mm))
@@ -609,4 +778,4 @@ if __name__ == '__main__':
 
     em_e = np.intersect1d(em, e)
     print ("Overlap MuonEG/EGamma:", len(em_e))
-    # print (em_e)
+    # print (em_e)'''

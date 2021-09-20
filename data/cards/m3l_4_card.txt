@@ -1,0 +1,28 @@
+Combination of dc_card_1=m3l_4_card.txt  dc_card_2=m3l_2_card.txt  dc_card_3=m3l_3_card.txt  dc_card_4=m3l_1_card.txt
+imax 4 number of bins
+jmax 5 number of processes minus 1
+kmax 6 number of nuisance parameters
+----------------------------------------------------------------------------------------------------------------------------------
+shapes *          dc_card_1  /home/users/hbronson/tmp/tmp2/CMSSW_10_2_9/src/tW_scattering_dilep/data/cards/m3l_4_shapes.root $PROCESS $PROCESS_$SYSTEMATIC
+shapes *          dc_card_2  /home/users/hbronson/tmp/tmp2/CMSSW_10_2_9/src/tW_scattering_dilep/data/cards/m3l_2_shapes.root $PROCESS $PROCESS_$SYSTEMATIC
+shapes *          dc_card_3  /home/users/hbronson/tmp/tmp2/CMSSW_10_2_9/src/tW_scattering_dilep/data/cards/m3l_3_shapes.root $PROCESS $PROCESS_$SYSTEMATIC
+shapes *          dc_card_4  /home/users/hbronson/tmp/tmp2/CMSSW_10_2_9/src/tW_scattering_dilep/data/cards/m3l_1_shapes.root $PROCESS $PROCESS_$SYSTEMATIC
+----------------------------------------------------------------------------------------------------------------------------------
+bin          dc_card_1      dc_card_2      dc_card_3      dc_card_4    
+observation  13.7954613225  6.3292137017   33.5704936805  19.2000379449
+----------------------------------------------------------------------------------------------------------------------------------
+bin                             dc_card_1      dc_card_1      dc_card_1      dc_card_1      dc_card_1      dc_card_1      dc_card_2      dc_card_2      dc_card_2      dc_card_2      dc_card_2      dc_card_2      dc_card_3      dc_card_3      dc_card_3      dc_card_3      dc_card_3      dc_card_3      dc_card_4      dc_card_4      dc_card_4      dc_card_4      dc_card_4      dc_card_4    
+process                         signal         ttz            rare           ttw            nonprompt      tth            signal         ttz            rare           ttw            nonprompt      tth            signal         ttz            rare           ttw            nonprompt      tth            signal         ttz            rare           ttw            nonprompt      tth          
+process                         0              1              2              3              4              5              0              1              2              3              4              5              0              1              2              3              4              5              0              1              2              3              4              5            
+rate                            0.482          0.937          4.23           2.595          3.5            2.051          0.524          0.901          0.116          2.024          1.142          1.622          0.878          9.059          5.69           4.187          8.952          4.805          0.936          7.254          0.445          3.78           2.802          3.983        
+----------------------------------------------------------------------------------------------------------------------------------
+fake                    lnN     -              -              -              -              1.03           -              -              -              -              -              1.03           -              -              -              -              -              1.03           -              -              -              -              -              1.03           -            
+lumi                    lnN     1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03         
+rare_norm               lnN     -              -              1.03           -              -              -              -              -              1.03           -              -              -              -              -              1.03           -              -              -              -              -              1.03           -              -              -            
+tth_norm                lnN     -              -              -              -              -              1.03           -              -              -              -              -              1.03           -              -              -              -              -              1.03           -              -              -              -              -              1.03         
+ttw_norm                lnN     -              -              -              1.03           -              -              -              -              -              1.03           -              -              -              -              -              1.03           -              -              -              -              -              1.03           -              -            
+ttz_norm                lnN     -              1.03           -              -              -              -              -              1.03           -              -              -              -              -              1.03           -              -              -              -              -              1.03           -              -              -              -            
+dc_card_1 autoMCStats 0 0 1
+dc_card_2 autoMCStats 0 0 1
+dc_card_3 autoMCStats 0 0 1
+dc_card_4 autoMCStats 0 0 1

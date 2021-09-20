@@ -115,14 +115,16 @@ signal_fill_opts = {
     'alpha': 0.1
 }
 
+import mplhep as hep
+plt.style.use(hep.style.CMS)
 
-def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=None, overlay=None):
+def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False, save=False, axis_label=None, ratio_range=None, upHists=[], downHists=[], shape=False, ymax=False, new_colors=colors, new_labels=my_labels, order=None, signals=[], omit=[], lumi=60.0, binwnorm=None, overlay=None, is_data=True, y_axis_label='Events', rescale={}):
     
     if save:
         finalizePlotDir( '/'.join(save.split('/')[:-1]) )
     
     mc_sel   = re.compile('(?!(%s))'%('|'.join(data+omit))) if len(data+omit)>0 else re.compile('')
-    data_sel = re.compile('|'.join(data))
+    data_sel = re.compile('('+'|'.join(data)+')(?!.*incl)')
     bkg_sel  = re.compile('(?!(%s))'%('|'.join(data+signals+omit))) if len(data+signals+omit)>0 else re.compile('')
 
     if histo is None:
@@ -155,11 +157,12 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     
     print ("Data:", round(Data_total,0), "MC:", round(MC_total,2))
     
+    rescale_tmp = { process: 1 if not process in rescale else rescale[process] for process in processes }
     if normalize and data_sel:
-        scales = { process: Data_total/MC_total for process in processes }
+        scales = { process: Data_total*rescale_tmp[process]/MC_total for process in processes }
         histogram.scale(scales, axis='dataset')
     else:
-        scales = {}
+        scales = rescale_tmp
 
     if shape:
         scales = { process: 1/histogram[process].sum("dataset").values(overflow='over')[()].sum() for process in processes }
@@ -170,9 +173,6 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     else:
         fig, ax  = plt.subplots(1,1,figsize=(10,10) )
 
-    if signals:
-        for sig in signals:
-            ax = hist.plot1d(histogram[sig], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
     if overlay:
         ax = hist.plot1d(overlay, overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
 
@@ -180,6 +180,10 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
         ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
     else:
         ax = hist.plot1d(histogram[bkg_sel], overlay="dataset", ax=ax, stack=True, overflow='over', clear=False, line_opts=None, fill_opts=fill_opts, order=(order if order else processes), binwnorm=binwnorm)
+
+    if signals:
+        for sig in signals:
+            ax = hist.plot1d(histogram[sig], overlay="dataset", ax=ax, stack=False, overflow='over', clear=False, line_opts=line_opts, fill_opts=None, binwnorm=binwnorm)
     if data:
         ax = hist.plot1d(histogram[data_sel].sum("dataset"), ax=ax, overflow='over', error_opts=data_err_opts, clear=False, binwnorm=binwnorm)
         #ax = hist.plot1d(observation, ax=ax, overflow='over', error_opts=data_err_opts, clear=False)
@@ -220,7 +224,7 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
             rax.set_xlabel(axis_label)
 
     ax.set_xlabel(axis_label)
-    ax.set_ylabel('Events')
+    ax.set_ylabel(y_axis_label)
     
     if not binwnorm:
         if not shape:
@@ -236,7 +240,8 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     if ymax:
         ax.set_ylim(0.01, ymax)
     else:
-        ax.set_ylim(0.01,y_max*y_mult if not shape else 2)
+        y_max = y_max*y_mult*(Data_total/MC_total) if data else y_max*y_mult
+        ax.set_ylim(0.01, y_max if not shape else 2)
         #if binwnorm: ax.set_ylim(0.5)
 
     ax.legend(
@@ -248,28 +253,26 @@ def makePlot(output, histo, axis, bins=None, data=[], normalize=True, log=False,
     )
     plt.subplots_adjust(hspace=0)
 
-    if len(data)>0:
-        fig.text(0.0, 0.995, '$\\bf{CMS}$ Preliminary', fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
-    else:
-        fig.text(0.0, 0.995, '$\\bf{CMS}$ Simulation', fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
-    fig.text(0.6, 0.995, r'$%.1f\ fb^{-1}$ (13 TeV)'%(lumi), fontsize=25,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+    hep.cms.label(
+        "Preliminary",
+        data=len(data)>0 and is_data,
+        lumi=lumi,
+        loc=0,
+        ax=ax,
+    )
 
     if normalize:
-        fig.text(0.55, 0.65, 'Data/MC = %s'%round(Data_total/MC_total,2), fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
+        fig.text(0.55, 0.55, 'Data/MC = %s'%round(Data_total/MC_total,2), fontsize=20,  horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes )
 
 
     if save:
-        #finalizePlotDir(outdir)
         fig.savefig("{}.pdf".format(save))
         fig.savefig("{}.png".format(save))
-        #fig.savefig(save)
         print ("Figure saved in:", save)
 
 
 def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over', rebin=False, ratio=False, scales={}):
     
-    #print (up_vars)
-
     if rebin:
         h = h.project(axis, 'dataset').rebin(axis, rebin)
     
@@ -308,7 +311,7 @@ def addUncertainties(ax, axis, h, selection, up_vars, down_vars, overflow='over'
         down = central - np.sqrt(down)
     
     opts = {'step': 'post', 'label': 'uncertainty', 'hatch': '///',
-                    'facecolor': 'none', 'edgecolor': (0, 0, 0, .5), 'linewidth': 0}
+                    'facecolor': 'none', 'edgecolor': (0, 0, 0, .5), 'linewidth': 0, 'zorder':100.}
     
     ax.fill_between(x=bins, y1=np.r_[down, down[-1]], y2=np.r_[up, up[-1]], **opts)
 
@@ -325,16 +328,66 @@ def scale_and_merge(histogram, samples, fileset, nano_mapping, lumi=60):
     lumi -- integrated luminosity in 1/fb
     """
     temp = histogram.copy()
-    
+
+    # scale according to cross sections    
     scales = {sample: lumi*1000*samples[sample]['xsec']/samples[sample]['sumWeight'] for sample in samples if sample in fileset}
-    # print (scales)
     temp.scale(scales, axis='dataset')
-    for cat in nano_mapping:
-        # print (cat)
-        if len(nano_mapping[cat])>1:
-            for sample in nano_mapping[cat][1:]:
-                # print ("Adding %s to %s, removing the individual entry"%(sample, nano_mapping[cat][0]))
-                temp[nano_mapping[cat][0]].add(temp[sample])
-                temp = temp.remove([sample], 'dataset')
+
+    
+    # merge according to categories:
+    # merge categorical axes (example from coffea tutorial)
+    #mapping = {
+    #    'all samples': ['sample 1', 'sample 2'],
+    #    'just sample 1': ['sample 1'],
+    #}
+    temp = temp.group("dataset", hist.Cat("dataset", "new grouped dataset"), nano_mapping) # this is not in place
                 
     return temp
+
+def compute_darkness(r, g, b, a=1.0):
+    """Compute the 'darkness' value from RGBA (darkness = 1 - luminance)
+       stolen from Nick Amin: https://github.com/aminnj/yahist
+       Version from Jonathan Guiang: https://gist.github.com/jkguiang/279cb4d2e68e64148afc62274df09f18
+    """
+    return a * (1.0 - (0.299 * r + 0.587 * g + 0.114 * b))
+
+def bin_text(counts, x_edges, y_edges, axes, cbar, errors=None, size=10, fmt=":0.2e"):
+    """Write bin population on top of 2D histogram bins,
+       stolen from Nick Amin: https://github.com/aminnj/yahist
+       Version from Jonathan Guiang: https://gist.github.com/jkguiang/279cb4d2e68e64148afc62274df09f18
+    """
+    show_errors = (type(errors) != type(None))
+    x_centers = x_edges[1:]-(x_edges[1:]-x_edges[:-1])/2
+    y_centers = y_edges[1:]-(y_edges[1:]-y_edges[:-1])/2
+    
+    if show_errors:
+        label_template = r"{0"+fmt+"}\n$\pm{1:0.2f}\%$"
+    else:
+        errors = np.zeros(counts.shape)
+        label_template = r"{0"+fmt+"}"
+        
+    xyz = np.c_[        
+        np.tile(x_centers, len(y_centers)),
+        np.repeat(y_centers, len(x_centers)),
+        counts.flatten(),
+        errors.flatten()
+    ][counts.flatten() != 0]
+
+    r, g, b, a = cbar.mappable.to_rgba(xyz[:, 2]).T
+    colors = np.zeros((len(xyz), 3))
+    colors[compute_darkness(r, g, b, a) > 0.45] = 1
+
+    for (x, y, count, err), color in zip(xyz, colors):
+        axes.text(
+            x,
+            y,
+            label_template.format(count, err),
+            color=color,
+            ha="center",
+            va="center",
+            fontsize=size,
+            wrap=True,
+        )
+
+    return
+

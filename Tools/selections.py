@@ -76,6 +76,7 @@ class Selection:
         self.selection.add('N_central>2',   (ak.num(self.jet_central)>2) )
         self.selection.add('N_central>3',   (ak.num(self.jet_central)>3) )
         self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0) )
+        self.selection.add('N_btag==2',      (ak.num(self.jet_btag)==2 ))
         #self.selection.add('N_light>0',     (ak.num(self.jet_light)>0) )
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>30',        (self.met.pt>30) )
@@ -84,8 +85,9 @@ class Selection:
         self.selection.add('N_btag=0',      (ak.num(self.jet_btag)==0) )
         self.selection.add('N_central>0',   (ak.num(self.jet_central)>0) )
 
-        
-        '''reqs = [
+        '''
+        #ttbar
+        reqs = [
             'filter',
          #   'lepsel',
             'dilep',
@@ -98,9 +100,29 @@ class Selection:
             'N_btag>0',
             #'N_light>0',
             'MET>30',
+            #'N_fwd>0',
+        ]
+        
+        
+        #ttbar->nb==2
+        reqs = [
+            'filter',
+         #   'lepsel',
+            'dilep',
+            'p_T(lep0)>25',
+            'p_T(lep1)>20',
+            'trigger',
+            'SS' if SS else 'OS',
+            'N_jet>3',
+            'N_central>2',
+            'N_btag==2',
+            #'N_light>0',
+            'MET>30',
             'N_fwd>0',
         ]'''
-            
+        
+        
+        #DY
         reqs = [
             'filter',
          #   'lepsel',
@@ -113,7 +135,7 @@ class Selection:
             'N_central>0',
             'N_btag=0',
             #'N_light>0',
-            'MET>30',
+            #'MET>30',
             'N_fwd>0',
         ]
         
@@ -174,7 +196,7 @@ class Selection:
 
         vetolepton   = ak.concatenate([self.ele_veto, self.mu_veto], axis=1)    
         vetotrilep = choose3(vetolepton, 3)
-        trilep = choose3(lepton, 3)
+        trilep = choose(lepton_tight, 3)
 
         pos_trilep =  ( ak.sum(lepton.charge, axis=1)>0 )
         neg_trilep =  ( ak.sum(lepton.charge, axis=1)<0 )
@@ -186,7 +208,7 @@ class Selection:
         st = self.met.pt + ht + ak.sum(self.mu.pt, axis=1) + ak.sum(self.ele.pt, axis=1)
         st_veto = self.met.pt + ht + ak.sum(self.mu_veto.pt, axis=1) + ak.sum(self.ele_veto.pt, axis=1)
         
-        m3l_onZ = (ak.all(abs(trilep.mass-91.2)<15, axis=1))
+        m3l_onZ = (ak.all(abs(vetotrilep.mass-91.2)<15, axis=1))
         offZ15 = (ak.all(abs(OS_dimu.mass-91.2)>15, axis=1) & ak.all(abs(OS_diele.mass-91.2)>15, axis=1))
 
         self.selection.add('trilep',        is_trilep)
@@ -202,6 +224,7 @@ class Selection:
         self.selection.add('N_central>1',   (ak.num(self.jet_central)>1) )
         self.selection.add('N_central>2',   (ak.num(self.jet_central)>2) )
         self.selection.add('N_btag>0',      (ak.num(self.jet_btag)>0 ))
+        self.selection.add('N_btag==2',      (ak.num(self.jet_btag)==2 ))
         self.selection.add('N_fwd>0',       (ak.num(self.jet_fwd)>0) )
         self.selection.add('MET>50',        (self.met.pt>50) )
         self.selection.add('ST>600',        (st_veto>600) )
@@ -212,7 +235,8 @@ class Selection:
         #self.selection.add('SFOS>=1',          ak.num(SFOS)==0)
         #self.selection.add('charge_sum',          neg_trilep)
         
-        '''reqs = [
+        #ttZ->no nfwd req
+        reqs = [
             'filter',
             'trilep',
             'p_T(lep0)>25',
@@ -224,11 +248,14 @@ class Selection:
             'N_jet>2',
             'N_central>1',
             'N_btag>0',
-            'N_fwd>0',
+            #'N_fwd>0',
             #'SFOS>=1',
             #'charge_sum'
-        ]'''
-        reqs = [
+        ]
+        
+                
+        #conversions
+        '''reqs = [
             'filter',
             'trilep',
             'p_T(lep0)>25',
@@ -242,7 +269,8 @@ class Selection:
             #'N_btag>0',
             'N_fwd>0',
             'm3l_onZ',
-        ]
+        ]'''
+        
         
         if tight:
             reqs += [

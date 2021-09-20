@@ -16,9 +16,18 @@ class btag_scalefactor:
         self.year = year
 
         if self.year == 2016:
-            pass
+            SF_file = os.path.expandvars('$TWHOME/data/btag/DeepJet_106XUL17SF_WPonly_V2.csv')  #FIXME. What to do with APV?
+            self.btag_sf = BTagScaleFactor(SF_file, "medium", keep_df=False)
+
+            # and load the efficiencies
+            self.effs = {
+                'b':     Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Summer20UL16_b_eff_deepJet.json")),
+                'c':     Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Summer20UL16_c_eff_deepJet.json")),
+                'light': Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Summer20UL16_light_eff_deepJet.json")),
+            }
         elif self.year == 2017:
             SF_file = os.path.expandvars('$TWHOME/data/btag/DeepJet_106XUL17SF_WPonly_V2.csv')
+            #SF_file = os.path.expandvars('$TWHOME/data/btag/DeepJet_106XUL17SF_V2.csv')
             self.btag_sf = BTagScaleFactor(SF_file, "medium", keep_df=False)
 
             # and load the efficiencies
@@ -48,8 +57,7 @@ class btag_scalefactor:
                 'light': Hist1D.from_json(os.path.expandvars("$TWHOME/data/btag/Autumn18_light_eff_deepJet.json")),
             }
             
-     
-    
+   
     def Method1a(self, tagged, untagged, b_direction='central', c_direction='central'):
         import numpy as np
         '''
@@ -98,3 +106,40 @@ class btag_scalefactor:
         denom = ak.prod(tagged_all, axis=1) * ak.prod((1-untagged_all), axis=1)
         num = ak.prod(tagged_all*tagged_SFs, axis=1) * ak.prod((1-untagged_all*untagged_SFs), axis=1)
         return num/denom
+
+if __name__ == '__main__':
+    import warnings
+    warnings.filterwarnings("ignore")
+
+    sf16 = btag_scalefactor(year=2016)
+    sf17 = btag_scalefactor(year=2017)
+    sf18 = btag_scalefactor(year=2018)
+    
+    ## Load a single file here, get leptons, eval SFs just to be sure everything works
+    from coffea.nanoevents import NanoEventsFactory, NanoAODSchema
+
+    from Tools.samples import get_babies
+    from Tools.basic_objects import getJets, getBTagsDeepFlavB
+    
+    import awkward as ak
+    
+    fileset_all = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.3.3_dilep/', year='UL2017')
+    
+    # load a subset of events
+    n_max = 5000
+    events = NanoEventsFactory.from_root(
+        fileset_all['TTW'][0],
+        schemaclass = NanoAODSchema,
+        entry_stop = n_max).events()
+
+    jet     = getJets(events, minPt=25, maxEta=2.4, pt_var='pt_nom')
+    btag    = getBTagsDeepFlavB(jet, year=2017)
+    light   = getBTagsDeepFlavB(jet, year=2017, invert=True)
+
+    sf_central = sf17.Method1a(btag, light)
+    print ("Mean value of SF (central): %.3f"%ak.mean(sf_central))
+    #sf_up       = sf18.get(el[sel], mu[sel], variation='up')
+    #print ("Mean value of SF (up): %.3f"%ak.mean(sf_up))
+    #sf_down     = sf18.get(el[sel], mu[sel], variation='down')
+    #print ("Mean value of SF (down): %.3f"%ak.mean(sf_down))
+

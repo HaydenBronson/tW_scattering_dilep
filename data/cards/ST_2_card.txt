@@ -1,0 +1,24 @@
+#cardFileWriter, 06:54AM on June 03, 2021
+imax 1
+jmax *
+kmax *
+
+# Bin0: Bin0
+
+shapes * * /home/users/hbronson/tmp/tmp2/CMSSW_10_2_9/src/tW_scattering_dilep/data/cards/ST_2_shapes.root  $PROCESS $PROCESS_$SYSTEMATIC 
+
+bin                                                                   Bin0
+observation                                                   5.386138588073873
+
+bin                                                                   Bin0         Bin0         Bin0         Bin0         Bin0         Bin0
+process                                                             signal          ttw          ttz          tth         rare    nonprompt
+process                                                                  0            1            2            3            4            5
+rate                                                                 0.264        1.136        0.821        1.537          0.0        1.627
+
+lumi                           lnN                                    1.03         1.03         1.03         1.03         1.03         1.03
+ttw_norm                       lnN                                       -         1.03            -            -            -            -
+ttz_norm                       lnN                                       -            -         1.03            -            -            -
+tth_norm                       lnN                                       -            -            -         1.03            -            -
+rare_norm                      lnN                                       -            -            -            -         1.03            -
+fake                           lnN                                       -            -            -            -            -         1.03
+* autoMCStats 0 

@@ -1,0 +1,24 @@
+Combination of dc_card_1=lead_lep_6_card.txt  dc_card_2=lead_lep_5_card.txt
+imax 2 number of bins
+jmax 5 number of processes minus 1
+kmax 6 number of nuisance parameters
+----------------------------------------------------------------------------------------------------------------------------------
+shapes *          dc_card_1  /home/users/hbronson/tmp/tmp2/CMSSW_10_2_9/src/tW_scattering_dilep/data/cards/lead_lep_6_shapes.root $PROCESS $PROCESS_$SYSTEMATIC
+shapes *          dc_card_2  /home/users/hbronson/tmp/tmp2/CMSSW_10_2_9/src/tW_scattering_dilep/data/cards/lead_lep_5_shapes.root $PROCESS $PROCESS_$SYSTEMATIC
+----------------------------------------------------------------------------------------------------------------------------------
+bin          dc_card_1      dc_card_2    
+observation  87.0402356964  46.3525411298
+----------------------------------------------------------------------------------------------------------------------------------
+bin                             dc_card_1      dc_card_1      dc_card_1      dc_card_1      dc_card_1      dc_card_1      dc_card_2      dc_card_2      dc_card_2      dc_card_2      dc_card_2      dc_card_2    
+process                         signal         ttz            rare           ttw            nonprompt      tth            signal         ttz            rare           ttw            nonprompt      tth          
+process                         0              1              2              3              4              5              0              1              2              3              4              5            
+rate                            2.155          18.814         14.711         10.845         27.208         13.307         2.253          15.551         0.815          9.241          7.431          11.062       
+----------------------------------------------------------------------------------------------------------------------------------
+fake                    lnN     -              -              -              -              1.03           -              -              -              -              -              1.03           -            
+lumi                    lnN     1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03           1.03         
+rare_norm               lnN     -              -              1.03           -              -              -              -              -              1.03           -              -              -            
+tth_norm                lnN     -              -              -              -              -              1.03           -              -              -              -              -              1.03         
+ttw_norm                lnN     -              -              -              1.03           -              -              -              -              -              1.03           -              -            
+ttz_norm                lnN     -              1.03           -              -              -              -              -              1.03           -              -              -              -            
+dc_card_1 autoMCStats 0 0 1
+dc_card_2 autoMCStats 0 0 1

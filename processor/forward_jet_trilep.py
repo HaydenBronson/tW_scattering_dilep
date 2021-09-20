@@ -108,8 +108,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         
         jf          = cross(high_p_fwd, jet)
         mjf         = (jf['0']+jf['1']).mass
-        #deltaEta    = abs(high_p_fwd.eta - jf[ak.singletons(ak.argmax(mjf, axis=1))]['1'].eta)
-        deltaEta   = abs(jf['0'].eta - jf['1'].eta)
+        deltaEta    = abs(high_p_fwd.eta - jf[ak.singletons(ak.argmax(mjf, axis=1))]['1'].eta)
+        #deltaEta   = abs(jf['0'].eta - jf['1'].eta)
         deltaEtaMax = ak.max(deltaEta, axis=1)
         mjf_max     = ak.max(mjf, axis=1)
         
@@ -182,8 +182,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             met = ev.MET,
         )
         
-#        BL = sel.trilep_baseline(cutflow=cutflow)
-        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0', 'SFOS>1'])
+        BL = sel.trilep_baseline(cutflow=cutflow)
+#        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0', 'SFOS>1'])
         
         if dataset=='XG':
             BL = (BL & conversion_req)
@@ -196,8 +196,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['PV_npvsGood'].fill(dataset=dataset, multiplicity=ev.PV[BL].npvsGood, weight=weight.weight()[BL])
         output['N_jet'].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight.weight()[BL])
         
-#        BL_minusNb = sel.trilep_baseline(omit=['N_btag>0']) 
-        BL_minusNb = sel.trilep_baseline(omit=['N_btag>0','N_fwd>0', 'N_central>0','SFOS>1'])   
+        BL_minusNb = sel.trilep_baseline(omit=['N_btag>0']) 
+#        BL_minusNb = sel.trilep_baseline(omit=['N_btag>0','N_fwd>0', 'N_central>0','SFOS>1'])   
           
         if dataset=='XG':
             BL_minusNb = (BL_minusNb & conversion_req)
@@ -240,26 +240,29 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         OS_dilepton_worst_mass = ak.fill_none(ak.pad_none(ak.concatenate([OS_dimuon_worstZmumu.mass, OS_dielectron_worstZee.mass], axis=1), 1, clip=True), -1) 
         
         OS_min_mass = ak.fill_none(ak.min(ak.concatenate([OS_dimu_veto.mass, OS_diele_veto.mass], axis=1), axis=1),0)
-        output['min_mass_SFOS'].fill(dataset=dataset, mass=(OS_min_mass[BL]), weight=weight.weight()[BL])
+        
+        
 
-#        BL_omitOffZ = sel.trilep_baseline(omit=['offZ'])
-#        BL_omitOnZ = sel.trilep_baseline(omit=['m3l_onZ'])
-        BL_omitOffZ = sel.trilep_baseline(omit=['offZ','SFOS>1'])
-        BL_omitOnZ = sel.trilep_baseline(omit=['m3l_onZ','SFOS>1'])
+        
+        BL_omitOffZ = sel.trilep_baseline(omit=['offZ'])
+        BL_omitOnZ = sel.trilep_baseline(omit=['onZ'])
+#        BL_omitOffZ = sel.trilep_baseline(omit=['offZ','SFOS>1'])
+#        BL_omitOnZ = sel.trilep_baseline(omit=['m3l_onZ','SFOS>1'])
 
         if dataset=='XG':
             BL_omitOffZ = (BL_omitOffZ & conversion_req)
         elif dataset=='ttbar' or dataset=='DY':
             BL_omitOffZ = (BL_omitOffZ & conversion_veto)
-            
+          
         if dataset=='XG':
             BL_omitOnZ = (BL_omitOnZ & conversion_req)
         elif dataset=='ttbar' or dataset=='DY':
             BL_omitOnZ = (BL_omitOnZ & conversion_veto)
-        
+            
+        output['min_mass_SFOS'].fill(dataset=dataset, mass=(OS_min_mass[BL_omitOnZ]), weight=weight.weight()[BL_omitOnZ])    
         output['onZ_pt'].fill(dataset=dataset, pt=ak.flatten(OS_dilepton_pt[BL]), weight=weight.weight()[BL])
         output['M3l'].fill(dataset=dataset, mass=(trilep_m[BL]), weight=weight.weight()[BL])
-        output['M_ll'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_mass[BL_omitOffZ]), weight=weight.weight()[BL_omitOffZ])
+        output['M_ll'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_mass[BL_omitOnZ]), weight=weight.weight()[BL_omitOnZ])
         #output['M_ll_all'].fill(dataset=dataset, mass=ak.flatten(OS_dilepton_all_mass[BL_omitOffZ]), weight=weight.weight()[BL_omitOffZ])
         
         BL_omitOffZ = sel.trilep_baseline(omit=['offZ'])
@@ -273,18 +276,18 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['N_tau'].fill(dataset=dataset, multiplicity=ak.num(tau)[BL], weight=weight.weight()[BL])
         output['N_track'].fill(dataset=dataset, multiplicity=ak.num(track)[BL], weight=weight.weight()[BL])
         
-#        BL = sel.trilep_baseline(cutflow=cutflow)
-        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_central>0','SFOS>1'])
+        BL = sel.trilep_baseline(cutflow=cutflow)
+#        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_central>0','SFOS>1'])
         if dataset=='XG':
             BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_central>0','SFOS>1'])
         elif dataset=='ttbar' or dataset=='DY':
             BL = (BL & conversion_veto)
         
         output['mjf_max'].fill(dataset=dataset, mass=mjf_max[BL], weight=weight.weight()[BL])
-        #output['deltaEta'].fill(dataset=dataset, eta=ak.flatten(deltaEta[BL]), weight=weight.weight()[BL])
+        output['deltaEta'].fill(dataset=dataset, eta=ak.flatten(deltaEta[BL]), weight=weight.weight()[BL])
         
-#        BL = sel.trilep_baseline(cutflow=cutflow)
-        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0','SFOS>1'])
+        BL = sel.trilep_baseline(cutflow=cutflow)
+#        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0','SFOS>1'])
         if dataset=='XG':
             BL = (BL & conversion_req)
         elif dataset=='ttbar' or dataset=='DY':
@@ -293,8 +296,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['min_bl_dR'].fill(dataset=dataset, eta=min_bl_dR[BL], weight=weight.weight()[BL])
         output['min_mt_lep_met'].fill(dataset=dataset, pt=min_mt_lep_met[BL], weight=weight.weight()[BL])
         
-#        BL = sel.trilep_baseline(cutflow=cutflow)
-        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+        BL = sel.trilep_baseline(cutflow=cutflow)
+#        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
         if dataset=='XG':
             BL = (BL & conversion_req)
         elif dataset=='ttbar' or dataset=='DY':
@@ -303,7 +306,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['leading_jet_pt'].fill(dataset=dataset, pt=ak.flatten(jet[:, 0:1][BL].pt), weight=weight.weight()[BL])
         
         output['leading_jet_eta'].fill(dataset=dataset, eta=ak.flatten(jet[:, 0:1][BL].eta), weight=weight.weight()[BL])
-        '''
+#        '''
         output['subleading_jet_pt'].fill(dataset=dataset, pt=ak.flatten(jet[:, 1:2][BL].pt), weight=weight.weight()[BL])
         output['subleading_jet_eta'].fill(dataset=dataset, eta=ak.flatten(jet[:, 1:2][BL].eta), weight=weight.weight()[BL])
         
@@ -311,9 +314,9 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         output['subleading_btag_pt'].fill(dataset=dataset, pt=ak.flatten(high_score_btag[:, 1:2][BL].pt), weight=weight.weight()[BL])
         output['leading_btag_eta'].fill(dataset=dataset, eta=ak.flatten(high_score_btag[:, 0:1][BL].eta), weight=weight.weight()[BL])
         output['subleading_btag_eta'].fill(dataset=dataset, eta=ak.flatten(high_score_btag[:, 1:2][BL].eta), weight=weight.weight()[BL])
-        '''        
-#        BL_minusFwd = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0'])
-        BL_minusFwd = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+#        '''        
+        BL_minusFwd = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0'])
+#        BL_minusFwd = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
         if dataset=='XG':
             BL_minusFwd = (BL_minusFwd & conversion_req)
         elif dataset=='ttbar' or dataset=='DY':
@@ -321,8 +324,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
         
         output['N_fwd'].fill(dataset=dataset, multiplicity=ak.num(fwd)[BL_minusFwd], weight=weight.weight()[BL_minusFwd])
         
-#        BL_minusMET = sel.trilep_baseline(cutflow=cutflow, omit=['MET>50'])
-        BL_minusMET = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+        BL_minusMET = sel.trilep_baseline(cutflow=cutflow, omit=['MET>50'])
+#        BL_minusMET = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
         if dataset=='XG':
             BL_minusMET = (BL_minusMET & conversion_req)
         elif dataset=='ttbar' or dataset=='DY':
@@ -374,8 +377,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             phi = ak.to_numpy(ak.flatten(second_lepton[BL].phi)),
             weight = weight.weight()[BL]
         )
-#        BL = sel.trilep_baseline(cutflow=cutflow)
-        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_central>0','SFOS>1'])
+        BL = sel.trilep_baseline(cutflow=cutflow)
+#        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_central>0','SFOS>1'])
         if dataset=='XG':
             BL = (BL & conversion_req)
         elif dataset=='ttbar' or dataset=='DY':
@@ -388,13 +391,13 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             phi = ak.flatten(high_p_fwd[BL].phi),
             weight = weight.weight()[BL]
         )
-#        BL = sel.trilep_baseline(cutflow=cutflow)
-        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+        BL = sel.trilep_baseline(cutflow=cutflow)
+#        BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
         if dataset=='XG':
             BL = (BL & conversion_req)
         elif dataset=='ttbar' or dataset=='DY':
             BL = (BL & conversion_veto)
-        '''        
+#        '''        
         output['b1'].fill(
             dataset = dataset,
             pt  = ak.flatten(high_score_btag[:, 0:1][BL].pt_nom),
@@ -410,7 +413,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             phi = ak.flatten(high_score_btag[:, 1:2][BL].phi),
             weight = weight.weight()[BL]
         )
-        '''
+#        '''
         output['j1'].fill(
             dataset = dataset,
             pt  = ak.flatten(jet.pt_nom[:, 0:1][BL]),
@@ -418,7 +421,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             phi = ak.flatten(jet.phi[:, 0:1][BL]),
             weight = weight.weight()[BL]
         )
-        '''
+#        '''
         output['j2'].fill(
             dataset = dataset,
             pt  = ak.flatten(jet[:, 1:2][BL].pt_nom),
@@ -434,7 +437,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
             phi = ak.flatten(jet[:, 2:3][BL].phi),
             weight = weight.weight()[BL]
         )
-        '''
+#        '''
 
         if re.search(data_pattern, dataset):
             #rle = ak.to_numpy(ak.zip([ev.run, ev.luminosityBlock, ev.event]))
@@ -488,8 +491,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     met = met,
                 )
 
-#                BL = sel.trilep_baseline(cutflow=cutflow)
-                BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+                BL = sel.trilep_baseline(cutflow=cutflow)
+#                BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
                 if dataset=='XG':
                     BL = (BL & conversion_req)
                 elif dataset=='ttbar' or dataset=='DY':
@@ -510,8 +513,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                 # the OS selection remains unchanged
                 output['N_jet_'+var].fill(dataset=dataset, multiplicity=ak.num(jet)[BL], weight=weight.weight()[BL])
                                  
-#                BL_minusFwd = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0'])
-                BL_minusFwd = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+                BL_minusFwd = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0'])
+#                BL_minusFwd = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
                 if dataset=='XG':
                     BL_minusFwd = (BL_minusFwd & conversion_req)
                 elif dataset=='ttbar' or dataset=='DY':
@@ -536,7 +539,7 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     phi = ak.flatten(jet.phi[:, 0:1][BL]),
                     weight = weight.weight()[BL]
                 )
-                '''                                 
+#                '''                                 
                 output['j2_'+var].fill(
                     dataset = dataset,
                     pt  = ak.flatten(jet.pt[:, 0:1][BL]),
@@ -559,9 +562,9 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     phi = ak.flatten(high_score_btag[:, 0:1].phi[:, 0:1][BL]),
                     weight = weight.weight()[BL]
                 )
-                '''
-#                BL = sel.trilep_baseline(cutflow=cutflow)
-                BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_central>0','SFOS>1'])
+#                '''
+                BL = sel.trilep_baseline(cutflow=cutflow)
+#                BL = sel.trilep_baseline(cutflow=cutflow, omit=['N_central>0','SFOS>1'])
                 if dataset=='XG':
                     BL = (BL & conversion_req)
                 elif dataset=='ttbar' or dataset=='DY':
@@ -576,8 +579,8 @@ class forwardJetAnalyzer(processor.ProcessorABC):
                     weight = weight.weight()[BL]
                 )
 
-#                BL_minusMET = sel.trilep_baseline(cutflow=cutflow, omit=['MET>50'])
-                BL_minusMET = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
+                BL_minusMET = sel.trilep_baseline(cutflow=cutflow, omit=['MET>50'])
+#                BL_minusMET = sel.trilep_baseline(cutflow=cutflow, omit=['N_fwd>0', 'N_central>0','SFOS>1'])
                 if dataset=='XG':
                     BL_minusMET = (BL_minusMET & conversion_req)
                 elif dataset=='ttbar' or dataset=='DY':
@@ -613,7 +616,7 @@ if __name__ == '__main__':
     argParser.add_argument('--iterative', action='store_true', default=None, help="Run iterative?")
     argParser.add_argument('--small', action='store_true', default=None, help="Run on a small subset?")
     argParser.add_argument('--verysmall', action='store_true', default=None, help="Run on a small subset?")
-    argParser.add_argument('--year', action='store', default='2017', help="Which year to run on?")
+    argParser.add_argument('--year', action='store', default='2018', help="Which year to run on?")
     argParser.add_argument('--evaluate', action='store_true', default=None, help="Evaluate the NN?")
     argParser.add_argument('--training', action='store', default='v21', help="Which training to use?")
     argParser.add_argument('--dump', action='store_true', default=None, help="Dump a DF for NN training?")
@@ -641,7 +644,7 @@ if __name__ == '__main__':
     # load the config and the cache
     cfg = loadConfig()
     
-    cacheName = 'conv_2017'
+    cacheName = 'temporary'
     if small: cacheName += '_small'
     cache = dir_archive(os.path.join(os.path.expandvars(cfg['caches']['base']), cacheName), serialized=True)
     

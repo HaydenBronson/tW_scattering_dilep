@@ -66,8 +66,8 @@ groups_2018 = {
 }
 
 groups_UL = {
-    'topW_NLO':     ['/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO_v7/'],
-    'topW_EFT':     ['/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO_UL18_v7/'],
+    'topW_NLO':     ['/ProjectMetis_TTWJetsToLNuEWK_5f_NLO_RunIIAutumn18_NANO'],
+    'topW_EFT':     ['/ProjectMetis_TTWJetsToLNuEWK_5f_SMEFTatNLO_weight_RunIIAutumn18_NANO'],
     # careful - TTX is a sum of all TTX but TTW
     'TTXnoW':        ['/TTZToLLNuNu[-_]', '/TWZToLL[-_]', '/TH[W,Q][-_]', '/TT[T,W,Z][T,W,Z][-_]', '/tZq[-_]', '/ttHJetToNonbb[-_]'],
     'TTW':           ['/TTWJets'],
@@ -81,16 +81,20 @@ groups_UL = {
     'top2l':         ['/TTTo2L2Nu', '/ST_t-channel', '/ST_tW[-_]'],
     'wjets':         ['/W[1-4]JetsToLNu[-_]'],
     'diboson':       ['/WZTo', '/WWTo', '/ZZTo', '/[W,Z][W,Z][W,Z][-_]', '/WpWp*'],
-    'wpwp':          ['/WpWp*'], # that's the SS sample. roughly 10% of ttW, but 50% of diboson at presel level
+    'wpwp': ['/SSWW_*'], # that's the SS sample. roughly 10% of ttW, but 50% of diboson at presel level
     'triboson':      ['/[W,Z][W,Z][W,Z][-_]'],
     'WW':            ['/WWTo'], 
     'WZ':            ['/WZTo.*amcatnloFXFX'], # there's also a powheg sample
-    'DY':            ['/DYJetsToLL'],
+    'DY':            ['/DYJetsToLL.*madgraphMLM'], # LO samples
+    'DY_NLO':        ['/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX', '/DYJetsToLL_M-10to50'], # NLO samples
+    'XG':            ['/TTGamma', '/WG', '/ZG', '/WZG'], # LO samples
 
     'MuonEG':       ['/MuonEG'],
     'DoubleEG':     ['/DoubleEG'],
-    'EGamma':       ['/EGamma', '/DoubleEG',],
+    'EGamma':       ['/EGamma'],
+    'SingleElectron': ['/SingleElectron'],
     'DoubleMuon':   ['/DoubleMuon'],
+    'SingleMuon':   ['/SingleMuon'],
 }
 
 
@@ -137,9 +141,13 @@ def get_babies(data_path, small=False, year=2018):
     if year=='2018':
         campaign = '.*'
     elif year=='UL2018':
-        campaign = '.*(Summer20UL18|Run2018)'
+        campaign = '.*(Summer20UL18|Run2018|UL18|Autumn18)'  # Autumn18 needed for missing UL samples
     elif year=='UL2017':
-        campaign = '.*(Summer20UL17|Run2017)'
+        campaign = '.*(Summer20UL17|Run2017|UL17|Fall17)'
+    elif year=='UL2016':
+        campaign = '.*(Summer20UL16NanoAODv|Run2016[GH]|Run2016F-UL|UL16_postVFP)'
+    elif year=='UL2016APV':
+        campaign = '.*(Summer20UL16NanoAODAPV|Run2016[BCDE]|Run2016F-HIPM|UL16_preVFP)'
     
     for sample in samples:
         for group in groups.keys():
@@ -152,4 +160,9 @@ def get_babies(data_path, small=False, year=2018):
     else:
         return fileset
 
+
+fs_2016 = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.4.0_dilep/', year='UL2016')
+fs_2016APV = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.4.0_dilep/', year='UL2016APV')
+fs_2017 = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.4.0_dilep/', year='UL2017')
+fs_2018 = get_babies('/hadoop/cms/store/user/dspitzba/nanoAOD/ttw_samples/topW_v0.4.0_dilep/', year='UL2018')
 
